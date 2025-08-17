@@ -33,7 +33,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["images/character.png", "lib/L2Dwidget.min.js", "lib/L2Dwidget.0.min.js", "init-live2d.js", "live2d_models/*/*", "live2d_models/*/*/*", "live2d_models/*/*/*/*"],
+      "resources": ["images/character.png", "hijack.js", "lib/L2Dwidget.min.js", "lib/L2Dwidget.0.min.js", "init-live2d.js", "live2d_models/*/*", "live2d_models/*/*/*", "live2d_models/*/*/*/*"],
       "matches": ["<all_urls>"]
     }
   ]

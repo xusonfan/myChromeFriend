@@ -61,23 +61,30 @@ function initializeLive2D() {
     characterModel: 'shizuku' // 默认角色
   }, (items) => {
     const modelName = items.characterModel;
-    const modelUrl = chrome.runtime.getURL(`live2d_models/${modelName}/${modelName}.model.json`);
-    live2dWidget.dataset.modelUrl = modelUrl;
+    live2dWidget.dataset.modelUrl = chrome.runtime.getURL(`live2d_models/${modelName}/${modelName}.model.json`);
 
-    // 依次注入所有必需的脚本到页面主世界（注意正确的加载顺序）
-    const mainScript = document.createElement('script');
-    mainScript.src = chrome.runtime.getURL('lib/L2Dwidget.min.js');
-    document.head.appendChild(mainScript);
+    // 首先注入劫持脚本，以禁用废弃的DOM事件
+    const hijackScript = document.createElement('script');
+    hijackScript.src = chrome.runtime.getURL('hijack.js');
+    document.head.appendChild(hijackScript);
 
-    mainScript.onload = () => {
-      const chunkScript = document.createElement('script');
-      chunkScript.src = chrome.runtime.getURL('lib/L2Dwidget.0.min.js');
-      document.head.appendChild(chunkScript);
+    // 劫持脚本加载后，再加载L2D库
+    hijackScript.onload = () => {
+      // 依次注入所有必需的脚本到页面主世界（注意正确的加载顺序）
+      const mainScript = document.createElement('script');
+      mainScript.src = chrome.runtime.getURL('lib/L2Dwidget.min.js');
+      document.head.appendChild(mainScript);
 
-      chunkScript.onload = () => {
-        const initScript = document.createElement('script');
-        initScript.src = chrome.runtime.getURL('init-live2d.js');
-        document.head.appendChild(initScript);
+      mainScript.onload = () => {
+        const chunkScript = document.createElement('script');
+        chunkScript.src = chrome.runtime.getURL('lib/L2Dwidget.0.min.js');
+        document.head.appendChild(chunkScript);
+
+        chunkScript.onload = () => {
+          const initScript = document.createElement('script');
+          initScript.src = chrome.runtime.getURL('init-live2d.js');
+          document.head.appendChild(initScript);
+        };
       };
     };
   });
