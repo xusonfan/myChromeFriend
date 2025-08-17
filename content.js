@@ -41,6 +41,7 @@ chrome.storage.sync.get({
 const dialogBox = document.createElement('div');
 dialogBox.id = 'dialog-box';
 dialogBox.style.position = 'fixed';
+dialogBox.style.zIndex = '9999'; // 设置一个很高的z-index值
 dialogBox.style.bottom = '180px'; // 将对话框下移，使其更贴近人物
 dialogBox.style.left = '0px'; // 直接放在人物头顶
 dialogBox.style.width = '200px'; // 减小宽度
@@ -51,15 +52,19 @@ dialogBox.style.border = '1px solid rgba(0, 0, 0, 0.2)'; // 半透明边框
 dialogBox.style.borderRadius = '12px';
 dialogBox.style.display = 'none'; // 默认隐藏
 dialogBox.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)'; // 增强阴影效果
-dialogBox.style.wordWrap = 'break-word'; // 长单词自动换行
 dialogBox.style.pointerEvents = 'none'; // 添加鼠标穿透功能
-// 美化字体
-dialogBox.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-dialogBox.style.fontSize = '13px';
-dialogBox.style.lineHeight = '1.4';
-dialogBox.style.color = '#333';
-dialogBox.style.letterSpacing = '0.2px';
 dialogBox.style.transition = 'all 0.3s ease'; // 添加过渡效果
+
+// 创建对话框内容容器
+const dialogContent = document.createElement('div');
+dialogContent.style.wordWrap = 'break-word'; // 长单词自动换行
+// 美化字体
+dialogContent.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
+dialogContent.style.fontSize = '13px';
+dialogContent.style.lineHeight = '1.4';
+dialogContent.style.color = '#333';
+dialogContent.style.letterSpacing = '0.2px';
+dialogBox.appendChild(dialogContent);
 
 // 隐藏滚动条样式但保留滚动功能
 dialogBox.style.scrollbarWidth = 'none'; // Firefox
@@ -74,7 +79,6 @@ closeButton.style.cursor = 'pointer';
 closeButton.style.fontSize = '16px';
 closeButton.style.lineHeight = '1';
 closeButton.style.color = '#666';
-closeButton.style.fontSize = '16px';
 closeButton.style.transition = 'all 0.2s ease';
 closeButton.style.pointerEvents = 'auto'; // 关闭按钮需要能够接收鼠标事件
 
@@ -179,10 +183,8 @@ function parseMarkdown(text) {
 
 // 流式显示函数（增强版）
 function streamText(element, text, speed = 15) {
-  // 保存按钮
-  const closeButton = element.querySelector('span[innerHTML="&times;"]');
-  const refreshButton = element.querySelector('span[innerHTML="&#x21bb;"]');
-  element.innerHTML = '';
+  const contentElement = element.firstChild;
+  contentElement.innerHTML = '';
   let index = 0;
   let currentText = '';
   
@@ -193,15 +195,7 @@ function streamText(element, text, speed = 15) {
       index++;
       
       // 实时解析markdown并显示
-      element.innerHTML = parseMarkdown(currentText);
-      
-      // 重新添加关闭按钮
-      if (refreshButton) {
-        element.appendChild(refreshButton);
-      }
-      if (closeButton) {
-        element.appendChild(closeButton);
-      }
+      contentElement.innerHTML = parseMarkdown(currentText);
       
       // 继续下一个字符
       setTimeout(typeWriter, speed);
@@ -213,18 +207,9 @@ function streamText(element, text, speed = 15) {
 
 // 页面加载后自动获取总结
 function getSummaryOnLoad() {
-  // 保存按钮
-  const closeButton = dialogBox.querySelector('span[innerHTML="&times;"]');
-  const refreshButton = dialogBox.querySelector('span[innerHTML="&#x21bb;"]');
+  const contentElement = dialogBox.firstChild;
   // 立即显示"正在思考中"并保持可见
-  dialogBox.innerHTML = '飞速阅读中...';
-  // 重新添加按钮
-  if (refreshButton) {
-    dialogBox.appendChild(refreshButton);
-  }
-  if (closeButton) {
-    dialogBox.appendChild(closeButton);
-  }
+  contentElement.innerHTML = '飞速阅读中...';
   dialogBox.style.display = 'block';
 
   // 从页面获取文本内容
