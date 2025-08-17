@@ -135,6 +135,8 @@ function saveOptions() {
   const prompt = document.getElementById('prompt').value;
   const maxTokens = document.getElementById('max-tokens').value;
   const characterModel = document.getElementById('character-model').value;
+  const enableFloatingButton = document.getElementById('enable-floating-button').checked;
+  const askPrompt = document.getElementById('ask-prompt').value;
 
   chrome.storage.sync.set({
     apiEndpoint: apiEndpoint,
@@ -142,7 +144,9 @@ function saveOptions() {
     modelName: modelName,
     prompt: prompt,
     maxTokens: maxTokens,
-    characterModel: characterModel
+    characterModel: characterModel,
+    enableFloatingButton: enableFloatingButton,
+    askPrompt: askPrompt
   }, () => {
     // 更新状态，让用户知道选项已保存。
     const status = document.getElementById('status');
@@ -161,13 +165,20 @@ function restoreOptions() {
     modelName: 'gpt-4', // 默认值
     prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容：', // 默认值
     maxTokens: '1000', // 默认值
-    characterModel: 'shizuku' // 默认角色
+    characterModel: 'shizuku', // 默认角色
+    enableFloatingButton: true, // 默认启用
+    askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}' // 默认提示词
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
     document.getElementById('prompt').value = items.prompt;
     document.getElementById('max-tokens').value = items.maxTokens;
     document.getElementById('character-model').value = items.characterModel;
+    document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
+    document.getElementById('ask-prompt').value = items.askPrompt;
+
+    // 初始化UI状态
+    updateAskPromptUI();
 
     // 保存当前选中的模型名称，以便在获取模型列表后恢复
     const savedModelName = items.modelName;
@@ -201,6 +212,27 @@ function restoreOptions() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', restoreOptions);
+// 根据启用状态，更新提示词输入框的UI
+function updateAskPromptUI() {
+  const enableFloatingButton = document.getElementById('enable-floating-button').checked;
+  const askPromptGroup = document.getElementById('ask-prompt-group');
+  const askPromptTextarea = document.getElementById('ask-prompt');
+
+  if (enableFloatingButton) {
+    askPromptGroup.style.opacity = '1';
+    askPromptTextarea.disabled = false;
+  } else {
+    askPromptGroup.style.opacity = '0.5';
+    askPromptTextarea.disabled = true;
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  restoreOptions();
+  // 确保在restoreOptions完成后再添加事件监听器
+  setTimeout(() => {
+    document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
+  }, 100);
+});
 document.getElementById('save-button').addEventListener('click', saveOptions);
 document.getElementById('fetch-models-button').addEventListener('click', fetchModels);

@@ -230,5 +230,92 @@ function getSummaryOnLoad() {
   }, 500); // 500毫秒的延迟
 }
 
+// 根据用户设置决定是否启用划词提问功能
+chrome.storage.sync.get({
+  enableFloatingButton: true, // 默认启用
+  askPrompt: '这是我选中的文本：\n\n"{selection}"\n\n请基于以下网页内容，以动漫少女的口吻解释这段文本：\n\n{context}' // 默认提示词
+}, (items) => {
+  if (items.enableFloatingButton) {
+    const askPromptTemplate = items.askPrompt;
+    // 创建浮动按钮
+    const floatingButton = document.createElement('div');
+    floatingButton.id = 'floating-ask-button';
+    floatingButton.innerText = '问问看板娘';
+    Object.assign(floatingButton.style, {
+      position: 'absolute',
+      display: 'none',
+      zIndex: '10000',
+      padding: '5px 10px',
+      background: 'white',
+      border: '1px solid #ccc',
+      borderRadius: '5px',
+      cursor: 'pointer',
+      boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+    });
+    document.body.appendChild(floatingButton);
+
+    let lastSelectedText = '';
+
+    // 监听鼠标抬起事件，以检测文本选择
+    document.addEventListener('mouseup', (e) => {
+      // 确保点击的不是我们的浮动按钮
+      if (e.target === floatingButton) {
+        return;
+      }
+      
+      // 延迟一小段时间以确保选区信息已更新
+      setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
+
+        if (selectedText) {
+          lastSelectedText = selectedText; // 暂存选中的文本
+          const range = selection.getRangeAt(0);
+          const rect = range.getBoundingClientRect();
+          
+          // 定位按钮到选区右下角
+          floatingButton.style.left = `${window.scrollX + rect.right}px`;
+          floatingButton.style.top = `${window.scrollY + rect.bottom}px`;
+          floatingButton.style.display = 'block';
+        } else {
+          floatingButton.style.display = 'none';
+        }
+      }, 10);
+    });
+
+    // 点击按钮时触发解释
+    floatingButton.addEventListener('click', () => {
+      if (lastSelectedText) {
+        const contentElement = dialogBox.firstChild;
+        contentElement.innerHTML = '正在思考中...';
+        dialogBox.style.display = 'block';
+
+        const pageContext = document.body.innerText;
+        const combinedText = askPromptTemplate
+          .replace('{selection}', lastSelectedText)
+          .replace('{context}', pageContext);
+
+        chrome.runtime.sendMessage({ type: 'GET_SUMMARY', text: combinedText }, (response) => {
+          if (response && response.summary) {
+            streamText(dialogBox, response.summary);
+          } else {
+            streamText(dialogBox, '未能获取响应。');
+          }
+        });
+      }
+      // 点击后隐藏按钮
+      floatingButton.style.display = 'none';
+      lastSelectedText = ''; // 清空暂存的文本
+    });
+
+    // 点击页面其他地方时隐藏按钮
+    document.addEventListener('mousedown', (e) => {
+      if (e.target !== floatingButton) {
+        floatingButton.style.display = 'none';
+      }
+    });
+  }
+});
+
 // 脚本加载时立即执行
 getSummaryOnLoad();

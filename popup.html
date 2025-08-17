@@ -21,7 +21,7 @@
       margin-bottom: 5px;
       font-size: 0.9em;
     }
-    input[type="text"], input[type="password"], textarea {
+    input[type="text"], input[type="password"], textarea, input[type="number"] {
       width: 100%;
       padding: 8px;
       box-sizing: border-box;
@@ -74,6 +74,20 @@
       border-radius: 4px;
       background-color: white;
     }
+    .form-group.sub-group {
+      padding-left: 24px; /* 与复选框的宽度+间距大致相等 */
+      border-left: 2px solid #eee;
+      margin-left: 10px;
+    }
+    .form-group .checkbox-label {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .form-group .checkbox-label input {
+      width: auto;
+      margin-right: 8px;
+    }
   </style>
 </head>
 <body>
@@ -118,6 +132,17 @@
       <option value="miku">Miku</option>
       <option value="z16">Z16</option>
     </select>
+  </div>
+
+  <div class="form-group">
+    <label class="checkbox-label">
+      <input type="checkbox" id="enable-floating-button" checked>
+      启用划词提问
+    </label>
+    <div id="ask-prompt-group" class="form-group sub-group">
+      <label for="ask-prompt">提示词:</label>
+      <textarea id="ask-prompt" placeholder="e.g., 请基于网页内容，以动漫少女的口吻解释这段文本："></textarea>
+    </div>
   </div>
 
   <button id="save-button">保存</button>
