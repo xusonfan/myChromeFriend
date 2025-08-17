@@ -66,6 +66,13 @@
       font-size: 0.8em;
       width: auto;
     }
+    .button-container {
+      display: flex;
+      gap: 5px;
+    }
+    .button-container > button {
+      flex: 1;
+    }
     select {
       width: 100%;
       padding: 8px;
@@ -141,6 +148,15 @@
   <div class="form-group">
     <label for="dialog-opacity">对话框透明度: <span id="opacity-value">0.6</span></label>
     <input type="range" id="dialog-opacity" min="0" max="1" step="0.1" value="0.6">
+  </div>
+
+  <div class="form-group">
+    <label for="refresh-shortcut">刷新快捷键:</label>
+    <div class="button-container">
+      <button id="refresh-shortcut-button" class="small-button">点击设置</button>
+      <button id="reset-shortcut-button" class="small-button">重置</button>
+    </div>
+    <input type="hidden" id="refresh-shortcut">
   </div>
 
   <div class="form-group">

@@ -139,6 +139,7 @@ function saveOptions() {
   const askPrompt = document.getElementById('ask-prompt').value;
   const dialogOpacity = document.getElementById('dialog-opacity').value;
   const blacklist = document.getElementById('blacklist').value;
+  const refreshShortcut = document.getElementById('refresh-shortcut').value;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -151,7 +152,8 @@ function saveOptions() {
     enableFloatingButton: true,
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
     dialogOpacity: 0.6,
-    blacklist: ''
+    blacklist: '',
+    refreshShortcut: ''
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -164,7 +166,8 @@ function saveOptions() {
       characterModel: characterModel,
       enableFloatingButton: enableFloatingButton,
       askPrompt: askPrompt,
-      blacklist: blacklist
+      blacklist: blacklist,
+      refreshShortcut: refreshShortcut
     };
 
     const hasChanges =
@@ -177,7 +180,8 @@ function saveOptions() {
       oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
       oldSettings.askPrompt !== newSettings.askPrompt ||
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
-      oldSettings.blacklist !== newSettings.blacklist;
+      oldSettings.blacklist !== newSettings.blacklist ||
+      oldSettings.refreshShortcut !== newSettings.refreshShortcut;
 
     chrome.storage.sync.set(newSettings, () => {
       // 更新状态，让用户知道选项已保存。
@@ -197,7 +201,7 @@ function saveOptions() {
       if (hasChanges) {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs && tabs.length > 0) {
-            chrome.tabs.reload(tabs[0].id);
+            chrome.tabs.reload(tabs.id);
           }
         });
       }
@@ -217,7 +221,8 @@ function restoreOptions() {
     enableFloatingButton: true, // 默认启用
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
     dialogOpacity: 0.6, // 默认透明度
-    blacklist: '' // 默认黑名单为空
+    blacklist: '', // 默认黑名单为空
+    refreshShortcut: '' // 默认快捷键为空
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -229,6 +234,14 @@ function restoreOptions() {
     document.getElementById('dialog-opacity').value = items.dialogOpacity;
     document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
+    document.getElementById('refresh-shortcut').value = items.refreshShortcut;
+    const shortcutButton = document.getElementById('refresh-shortcut-button');
+    if (items.refreshShortcut) {
+      shortcutButton.textContent = items.refreshShortcut;
+    } else {
+      shortcutButton.textContent = '点击设置';
+    }
+
 
     // 初始化UI状态
     updateAskPromptUI();
@@ -292,4 +305,45 @@ document.getElementById('fetch-models-button').addEventListener('click', fetchMo
 
 document.getElementById('dialog-opacity').addEventListener('input', (event) => {
   document.getElementById('opacity-value').textContent = event.target.value;
+});
+
+document.getElementById('refresh-shortcut-button').addEventListener('click', () => {
+  const button = document.getElementById('refresh-shortcut-button');
+  const shortcutInput = document.getElementById('refresh-shortcut');
+  button.textContent = '请按键...';
+
+  const keydownHandler = (event) => {
+    event.preventDefault();
+    // 忽略单独的修饰键
+    if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      button.textContent = shortcutInput.value || '点击设置';
+      document.removeEventListener('keydown', keydownHandler);
+      return;
+    }
+
+    const parts = [];
+    if (event.ctrlKey) parts.push('ctrl');
+    if (event.altKey) parts.push('alt');
+    if (event.shiftKey) parts.push('shift');
+    parts.push(event.key.toLowerCase());
+    
+    const shortcutString = parts.join('+');
+    shortcutInput.value = shortcutString;
+    button.textContent = shortcutString;
+    
+    document.removeEventListener('keydown', keydownHandler);
+  };
+
+  document.addEventListener('keydown', keydownHandler);
+});
+
+document.getElementById('reset-shortcut-button').addEventListener('click', () => {
+  const button = document.getElementById('refresh-shortcut-button');
+  const shortcutInput = document.getElementById('refresh-shortcut');
+  shortcutInput.value = '';
+  button.textContent = '点击设置';
 });

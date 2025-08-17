@@ -377,4 +377,27 @@ function initializeLive2D() {
 
   // 脚本加载时立即执行
   getSummaryOnLoad();
+
+  // 添加快捷键监听
+  chrome.storage.sync.get({
+    refreshShortcut: '' // 默认不设置快捷键
+  }, (items) => {
+    if (items.refreshShortcut) {
+      const shortcut = items.refreshShortcut.toLowerCase().split('+');
+      const key = shortcut[shortcut.length - 1];
+      const ctrl = shortcut.includes('ctrl');
+      const alt = shortcut.includes('alt');
+      const shift = shortcut.includes('shift');
+
+      document.addEventListener('keydown', (e) => {
+        if (e.key.toLowerCase() === key &&
+            e.ctrlKey === ctrl &&
+            e.altKey === alt &&
+            e.shiftKey === shift) {
+          e.preventDefault();
+          getSummaryOnLoad();
+        }
+      });
+    }
+  });
 }
