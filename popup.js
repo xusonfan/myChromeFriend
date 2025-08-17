@@ -189,6 +189,8 @@ function saveOptions() {
       }
       setTimeout(() => {
         status.textContent = '';
+        // 保存后关闭弹出窗口
+        window.close();
       }, 1500);
 
       // 只有当设置有变化时才刷新当前活动的标签页
