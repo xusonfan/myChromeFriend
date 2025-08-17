@@ -137,23 +137,65 @@ function saveOptions() {
   const characterModel = document.getElementById('character-model').value;
   const enableFloatingButton = document.getElementById('enable-floating-button').checked;
   const askPrompt = document.getElementById('ask-prompt').value;
+  const dialogOpacity = document.getElementById('dialog-opacity').value;
 
-  chrome.storage.sync.set({
-    apiEndpoint: apiEndpoint,
-    apiKey: apiKey,
-    modelName: modelName,
-    prompt: prompt,
-    maxTokens: maxTokens,
-    characterModel: characterModel,
-    enableFloatingButton: enableFloatingButton,
-    askPrompt: askPrompt
-  }, () => {
-    // 更新状态，让用户知道选项已保存。
-    const status = document.getElementById('status');
-    status.textContent = '选项已保存。';
-    setTimeout(() => {
-      status.textContent = '';
-    }, 1500);
+  // 先获取当前保存的设置，用于比较是否有变化
+  chrome.storage.sync.get({
+    apiEndpoint: '',
+    apiKey: '',
+    modelName: 'gpt-4',
+    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容：',
+    maxTokens: '1000',
+    characterModel: 'shizuku',
+    enableFloatingButton: true,
+    askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
+    dialogOpacity: 0.6
+  }, (oldSettings) => {
+    // 检查设置是否有变化
+    const newSettings = {
+      dialogOpacity: dialogOpacity,
+      apiEndpoint: apiEndpoint,
+      apiKey: apiKey,
+      modelName: modelName,
+      prompt: prompt,
+      maxTokens: maxTokens,
+      characterModel: characterModel,
+      enableFloatingButton: enableFloatingButton,
+      askPrompt: askPrompt
+    };
+
+    const hasChanges =
+      oldSettings.apiEndpoint !== newSettings.apiEndpoint ||
+      oldSettings.apiKey !== newSettings.apiKey ||
+      oldSettings.modelName !== newSettings.modelName ||
+      oldSettings.prompt !== newSettings.prompt ||
+      oldSettings.maxTokens !== newSettings.maxTokens ||
+      oldSettings.characterModel !== newSettings.characterModel ||
+      oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
+      oldSettings.askPrompt !== newSettings.askPrompt ||
+      oldSettings.dialogOpacity !== newSettings.dialogOpacity;
+
+    chrome.storage.sync.set(newSettings, () => {
+      // 更新状态，让用户知道选项已保存。
+      const status = document.getElementById('status');
+      if (hasChanges) {
+        status.textContent = '选项已保存。';
+      } else {
+        status.textContent = '设置未变化，无需保存。';
+      }
+      setTimeout(() => {
+        status.textContent = '';
+      }, 1500);
+
+      // 只有当设置有变化时才刷新当前活动的标签页
+      if (hasChanges) {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+          if (tabs && tabs.length > 0) {
+            chrome.tabs.reload(tabs[0].id);
+          }
+        });
+      }
+    });
   });
 }
 
@@ -167,7 +209,8 @@ function restoreOptions() {
     maxTokens: '1000', // 默认值
     characterModel: 'shizuku', // 默认角色
     enableFloatingButton: true, // 默认启用
-    askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}' // 默认提示词
+    askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
+    dialogOpacity: 0.6 // 默认透明度
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -176,6 +219,8 @@ function restoreOptions() {
     document.getElementById('character-model').value = items.characterModel;
     document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
     document.getElementById('ask-prompt').value = items.askPrompt;
+    document.getElementById('dialog-opacity').value = items.dialogOpacity;
+    document.getElementById('opacity-value').textContent = items.dialogOpacity;
 
     // 初始化UI状态
     updateAskPromptUI();
@@ -236,3 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 document.getElementById('save-button').addEventListener('click', saveOptions);
 document.getElementById('fetch-models-button').addEventListener('click', fetchModels);
+
+document.getElementById('dialog-opacity').addEventListener('input', (event) => {
+  document.getElementById('opacity-value').textContent = event.target.value;
+});

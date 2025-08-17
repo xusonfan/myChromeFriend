@@ -47,7 +47,11 @@ dialogBox.style.left = '0px'; // 直接放在人物头顶
 dialogBox.style.width = '200px'; // 减小宽度
 dialogBox.style.maxWidth = '300px'; // 限制最大宽度
 dialogBox.style.padding = '8px';
-dialogBox.style.background = 'rgba(255, 255, 255, 0.9)'; // 提高透明度
+chrome.storage.sync.get({
+  dialogOpacity: 0.6 // 默认值
+}, (items) => {
+  dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
+});
 dialogBox.style.border = '1px solid rgba(0, 0, 0, 0.2)'; // 半透明边框
 dialogBox.style.borderRadius = '12px';
 dialogBox.style.display = 'none'; // 默认隐藏
