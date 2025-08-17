@@ -92,6 +92,8 @@ function initializeLive2D() {
   dialogBox.style.width = '200px'; // 减小宽度
   dialogBox.style.maxWidth = '300px'; // 限制最大宽度
   dialogBox.style.padding = '8px';
+  dialogBox.style.maxHeight = 'calc(100vh - 220px)'; // 限制最大高度，避免超出视窗
+  dialogBox.style.overflowY = 'auto'; // 内容超出时显示滚动条
   chrome.storage.sync.get({
     dialogOpacity: 0.6 // 默认值
   }, (items) => {
