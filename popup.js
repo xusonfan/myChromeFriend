@@ -138,6 +138,7 @@ function saveOptions() {
   const enableFloatingButton = document.getElementById('enable-floating-button').checked;
   const askPrompt = document.getElementById('ask-prompt').value;
   const dialogOpacity = document.getElementById('dialog-opacity').value;
+  const blacklist = document.getElementById('blacklist').value;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -149,7 +150,8 @@ function saveOptions() {
     characterModel: 'shizuku',
     enableFloatingButton: true,
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
-    dialogOpacity: 0.6
+    dialogOpacity: 0.6,
+    blacklist: ''
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -161,7 +163,8 @@ function saveOptions() {
       maxTokens: maxTokens,
       characterModel: characterModel,
       enableFloatingButton: enableFloatingButton,
-      askPrompt: askPrompt
+      askPrompt: askPrompt,
+      blacklist: blacklist
     };
 
     const hasChanges =
@@ -173,7 +176,8 @@ function saveOptions() {
       oldSettings.characterModel !== newSettings.characterModel ||
       oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
       oldSettings.askPrompt !== newSettings.askPrompt ||
-      oldSettings.dialogOpacity !== newSettings.dialogOpacity;
+      oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
+      oldSettings.blacklist !== newSettings.blacklist;
 
     chrome.storage.sync.set(newSettings, () => {
       // 更新状态，让用户知道选项已保存。
@@ -210,7 +214,8 @@ function restoreOptions() {
     characterModel: 'shizuku', // 默认角色
     enableFloatingButton: true, // 默认启用
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
-    dialogOpacity: 0.6 // 默认透明度
+    dialogOpacity: 0.6, // 默认透明度
+    blacklist: '' // 默认黑名单为空
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -220,6 +225,7 @@ function restoreOptions() {
     document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
     document.getElementById('ask-prompt').value = items.askPrompt;
     document.getElementById('dialog-opacity').value = items.dialogOpacity;
+    document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
 
     // 初始化UI状态
