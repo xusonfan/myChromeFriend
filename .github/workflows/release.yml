@@ -22,10 +22,9 @@ jobs:
 
       - name: Package Extension
         id: package_extension
-        uses: stefanzweifel/chrome-extension-pack-action@v1
-        with:
-          # 如果您有自己的签名文件 (.pem)，请确保已将其内容设置为名为 CHROME_EXTENSION_PRIVATE_KEY 的 Secret
-          private-key: ${{ secrets.CHROME_EXTENSION_PRIVATE_KEY }}
+        run: |
+          zip -r my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip . -x ".git/*" ".github/*"
+          echo "zip_path=my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip" >> $GITHUB_OUTPUT
 
       - name: Generate Changelog
         id: changelog
@@ -69,13 +68,3 @@ jobs:
           asset_path: ${{ steps.package_extension.outputs.zip_path }}
           asset_name: my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip
           asset_content_type: application/zip
-
-      - name: Upload CRX Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.package_extension.outputs.crx_path }}
-          asset_name: my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.crx
-          asset_content_type: application/x-chrome-extension
