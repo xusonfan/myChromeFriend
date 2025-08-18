@@ -101,11 +101,6 @@ function initializeLive2D() {
   dialogBox.style.padding = '8px';
   dialogBox.style.maxHeight = 'calc(100vh - 220px)'; // 限制最大高度，避免超出视窗
   dialogBox.style.overflowY = 'auto'; // 内容超出时显示滚动条
-  chrome.storage.sync.get({
-    dialogOpacity: 0.6 // 默认值
-  }, (items) => {
-    dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
-  });
   dialogBox.style.border = '1px solid rgba(0, 0, 0, 0.2)'; // 半透明边框
   dialogBox.style.borderRadius = '12px';
   dialogBox.style.display = 'none'; // 默认隐藏
@@ -118,7 +113,6 @@ function initializeLive2D() {
   dialogContent.style.wordWrap = 'break-word'; // 长单词自动换行
   // 美化字体
   dialogContent.style.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif';
-  dialogContent.style.fontSize = '13px';
   dialogContent.style.lineHeight = '1.4';
   dialogContent.style.color = '#333';
   dialogContent.style.letterSpacing = '0.2px';
@@ -190,6 +184,15 @@ function initializeLive2D() {
   dialogBox.appendChild(refreshButton);
   dialogBox.appendChild(closeButton);
   document.body.appendChild(dialogBox);
+
+  // 从存储中获取设置并应用样式
+  chrome.storage.sync.get({
+    dialogOpacity: 0.6,
+    dialogFontSize: 14
+  }, (items) => {
+    dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
+    dialogContent.style.fontSize = `${items.dialogFontSize}px`;
+  });
    
   // 添加Webkit滚动条隐藏样式
   const style = document.createElement('style');

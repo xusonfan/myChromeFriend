@@ -138,6 +138,7 @@ function saveOptions() {
   const enableFloatingButton = document.getElementById('enable-floating-button').checked;
   const askPrompt = document.getElementById('ask-prompt').value;
   const dialogOpacity = document.getElementById('dialog-opacity').value;
+  const dialogFontSize = document.getElementById('dialog-font-size').value;
   const blacklist = document.getElementById('blacklist').value;
   const refreshShortcut = document.getElementById('refresh-shortcut').value;
   const autoSummarize = document.getElementById('auto-summarize').checked;
@@ -153,6 +154,7 @@ function saveOptions() {
     enableFloatingButton: true,
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
     dialogOpacity: 0.6,
+    dialogFontSize: 14,
     blacklist: '',
     refreshShortcut: '',
     autoSummarize: true
@@ -160,6 +162,7 @@ function saveOptions() {
     // 检查设置是否有变化
     const newSettings = {
       dialogOpacity: dialogOpacity,
+      dialogFontSize: dialogFontSize,
       apiEndpoint: apiEndpoint,
       apiKey: apiKey,
       modelName: modelName,
@@ -183,6 +186,7 @@ function saveOptions() {
       oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
       oldSettings.askPrompt !== newSettings.askPrompt ||
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
+      oldSettings.dialogFontSize !== newSettings.dialogFontSize ||
       oldSettings.blacklist !== newSettings.blacklist ||
       oldSettings.refreshShortcut !== newSettings.refreshShortcut ||
       oldSettings.autoSummarize !== newSettings.autoSummarize;
@@ -225,6 +229,7 @@ function restoreOptions() {
     enableFloatingButton: true, // 默认启用
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
     dialogOpacity: 0.6, // 默认透明度
+    dialogFontSize: 14, // 默认字体大小
     blacklist: '', // 默认黑名单为空
     refreshShortcut: '', // 默认快捷键为空
     autoSummarize: true // 默认启用自动总结
@@ -237,8 +242,10 @@ function restoreOptions() {
     document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
     document.getElementById('ask-prompt').value = items.askPrompt;
     document.getElementById('dialog-opacity').value = items.dialogOpacity;
-    document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
+    document.getElementById('dialog-font-size').value = items.dialogFontSize;
+    document.getElementById('font-size-value').textContent = items.dialogFontSize;
+    document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('refresh-shortcut').value = items.refreshShortcut;
     document.getElementById('auto-summarize').checked = items.autoSummarize;
     const shortcutButton = document.getElementById('refresh-shortcut-button');
@@ -311,6 +318,10 @@ document.getElementById('fetch-models-button').addEventListener('click', fetchMo
 
 document.getElementById('dialog-opacity').addEventListener('input', (event) => {
   document.getElementById('opacity-value').textContent = event.target.value;
+});
+
+document.getElementById('dialog-font-size').addEventListener('input', (event) => {
+  document.getElementById('font-size-value').textContent = event.target.value;
 });
 
 document.getElementById('refresh-shortcut-button').addEventListener('click', () => {
