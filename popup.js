@@ -140,6 +140,7 @@ function saveOptions() {
   const dialogOpacity = document.getElementById('dialog-opacity').value;
   const blacklist = document.getElementById('blacklist').value;
   const refreshShortcut = document.getElementById('refresh-shortcut').value;
+  const autoSummarize = document.getElementById('auto-summarize').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -153,7 +154,8 @@ function saveOptions() {
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
     dialogOpacity: 0.6,
     blacklist: '',
-    refreshShortcut: ''
+    refreshShortcut: '',
+    autoSummarize: true
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -167,7 +169,8 @@ function saveOptions() {
       enableFloatingButton: enableFloatingButton,
       askPrompt: askPrompt,
       blacklist: blacklist,
-      refreshShortcut: refreshShortcut
+      refreshShortcut: refreshShortcut,
+      autoSummarize: autoSummarize
     };
 
     const hasChanges =
@@ -181,7 +184,8 @@ function saveOptions() {
       oldSettings.askPrompt !== newSettings.askPrompt ||
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
       oldSettings.blacklist !== newSettings.blacklist ||
-      oldSettings.refreshShortcut !== newSettings.refreshShortcut;
+      oldSettings.refreshShortcut !== newSettings.refreshShortcut ||
+      oldSettings.autoSummarize !== newSettings.autoSummarize;
 
     chrome.storage.sync.set(newSettings, () => {
       // 更新状态，让用户知道选项已保存。
@@ -222,7 +226,8 @@ function restoreOptions() {
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
     dialogOpacity: 0.6, // 默认透明度
     blacklist: '', // 默认黑名单为空
-    refreshShortcut: '' // 默认快捷键为空
+    refreshShortcut: '', // 默认快捷键为空
+    autoSummarize: true // 默认启用自动总结
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -235,6 +240,7 @@ function restoreOptions() {
     document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
     document.getElementById('refresh-shortcut').value = items.refreshShortcut;
+    document.getElementById('auto-summarize').checked = items.autoSummarize;
     const shortcutButton = document.getElementById('refresh-shortcut-button');
     if (items.refreshShortcut) {
       shortcutButton.textContent = items.refreshShortcut;

@@ -375,8 +375,15 @@ function initializeLive2D() {
     }
   });
 
-  // 脚本加载时立即执行
-  getSummaryOnLoad();
+  // 根据设置决定是否在加载时自动总结
+  chrome.storage.sync.get({
+    autoSummarize: true // 默认启用
+  }, (items) => {
+    if (items.autoSummarize) {
+      // 脚本加载时立即执行
+      getSummaryOnLoad();
+    }
+  });
 
   // 添加快捷键监听
   chrome.storage.sync.get({
