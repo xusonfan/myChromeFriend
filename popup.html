@@ -101,39 +101,63 @@
       box-sizing: border-box; /* 添加此行以确保宽度计算正确 */
     }
   </style>
+  <style>
+    .bordered-group {
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-top: 10px;
+    }
+    .bordered-group h2 {
+      margin: 0;
+      padding: 10px;
+      font-size: 1em;
+      cursor: pointer;
+    }
+    #api-settings-container {
+      padding: 0 10px 10px;
+    }
+    #api-settings-container .form-group:last-child {
+      margin-bottom: 0;
+    }
+  </style>
 </head>
 <body>
   <h1>设置</h1>
 
-  <div class="form-group">
-    <label for="api-endpoint">API 接口:</label>
-    <input type="text" id="api-endpoint" placeholder="https://api.openai.com">
-  </div>
+  <div class="form-group bordered-group">
+    <h2 id="api-settings-toggle">API 设置 ▾</h2>
+    <div id="api-settings-container">
+      <div class="form-group">
+        <label for="api-endpoint">API 接口:</label>
+        <input type="text" id="api-endpoint" placeholder="https://api.openai.com">
+      </div>
 
-  <div class="form-group">
-    <label for="api-key">API 密钥:</label>
-    <input type="password" id="api-key">
-  </div>
+      <div class="form-group">
+        <label for="api-key">API 密钥:</label>
+        <input type="password" id="api-key">
+      </div>
 
-  <div class="form-group">
-    <div class="label-group">
-      <label for="model-name">模型名称:</label>
-      <button id="fetch-models-button" class="small-button">获取</button>
+      <div class="form-group">
+        <div class="label-group">
+          <label for="model-name">模型名称:</label>
+          <button id="fetch-models-button" class="small-button">获取</button>
+        </div>
+        <select id="model-name" placeholder="选择模型名称">
+          <option value="">请先获取模型列表...</option>
+        </select>
+        <datalist id="model-list" style="display: none;"></datalist>
+      </div>
+
+      <div class="form-group">
+        <label for="prompt">提示词:</label>
+        <textarea id="prompt" placeholder="e.g., 请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="max-tokens">最大令牌数:</label>
+        <input type="number" id="max-tokens" placeholder="e.g., 1000">
+      </div>
     </div>
-    <select id="model-name" placeholder="选择模型名称">
-      <option value="">请先获取模型列表...</option>
-    </select>
-    <datalist id="model-list" style="display: none;"></datalist>
-  </div>
-
-  <div class="form-group">
-    <label for="prompt">提示词:</label>
-    <textarea id="prompt" placeholder="e.g., 请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。"></textarea>
-  </div>
-
-  <div class="form-group">
-    <label for="max-tokens">最大令牌数:</label>
-    <input type="number" id="max-tokens" placeholder="e.g., 1000">
   </div>
 
   <div class="form-group">

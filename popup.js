@@ -161,8 +161,8 @@ function saveOptions() {
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
-      dialogOpacity: dialogOpacity,
-      dialogFontSize: dialogFontSize,
+      dialogOpacity: parseFloat(dialogOpacity),
+      dialogFontSize: parseInt(dialogFontSize, 10),
       apiEndpoint: apiEndpoint,
       apiKey: apiKey,
       modelName: modelName,
@@ -192,26 +192,29 @@ function saveOptions() {
       oldSettings.autoSummarize !== newSettings.autoSummarize;
 
     chrome.storage.sync.set(newSettings, () => {
-      // 更新状态，让用户知道选项已保存。
       const status = document.getElementById('status');
+
       if (hasChanges) {
         status.textContent = '选项已保存。';
-      } else {
-        status.textContent = '设置未变化，无需保存。';
-      }
-      setTimeout(() => {
-        status.textContent = '';
-        // 保存后关闭弹出窗口
-        window.close();
-      }, 1500);
 
-      // 只有当设置有变化时才刷新当前活动的标签页
-      if (hasChanges) {
+        // 只有当设置有变化时才刷新当前活动的标签页
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
           if (tabs && tabs.length > 0) {
-            chrome.tabs.reload(tabs.id);
+            chrome.tabs.reload(tabs[0].id);
           }
         });
+
+        // 1.5秒后关闭弹窗
+        setTimeout(() => {
+          window.close();
+        }, 1500);
+
+      } else {
+        status.textContent = '设置未变化，无需保存。';
+        // 1.5秒后仅清除消息，不关闭弹窗
+        setTimeout(() => {
+          status.textContent = '';
+        }, 1500);
       }
     });
   });
@@ -258,6 +261,14 @@ function restoreOptions() {
 
     // 初始化UI状态
     updateAskPromptUI();
+
+    // 检查API设置是否已填写，如果已填写则折叠
+    if (items.apiEndpoint && items.apiKey && items.modelName && items.prompt && items.maxTokens) {
+      const apiSettingsContainer = document.getElementById('api-settings-container');
+      const apiSettingsToggle = document.getElementById('api-settings-toggle');
+      apiSettingsContainer.style.display = 'none';
+      apiSettingsToggle.textContent = 'API 设置 ▸';
+    }
 
     // 保存当前选中的模型名称，以便在获取模型列表后恢复
     const savedModelName = items.modelName;
@@ -306,8 +317,21 @@ function updateAskPromptUI() {
   }
 }
 
+// 设置API设置区域的折叠/展开功能
+function setupApiSettingsToggle() {
+  const apiSettingsToggle = document.getElementById('api-settings-toggle');
+  const apiSettingsContainer = document.getElementById('api-settings-container');
+
+  apiSettingsToggle.addEventListener('click', () => {
+    const isVisible = apiSettingsContainer.style.display !== 'none';
+    apiSettingsContainer.style.display = isVisible ? 'none' : 'block';
+    apiSettingsToggle.textContent = isVisible ? 'API 设置 ▸' : 'API 设置 ▾';
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
+  setupApiSettingsToggle();
   // 确保在restoreOptions完成后再添加事件监听器
   setTimeout(() => {
     document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
