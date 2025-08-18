@@ -15,7 +15,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const API_ENDPOINT = config.apiEndpoint;
       const API_KEY = config.apiKey;
       const MODEL_NAME = config.modelName || 'gpt-4'; // 使用保存的模型或默认值
-      const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容：'; // 使用保存的提示词或默认值
+      const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。'; // 使用保存的提示词或默认值
       const MAX_TOKENS = config.maxTokens || '1000'; // 使用保存的最大令牌数或默认值
 
       // 准备发送到API的数据，采用OpenAI Chat Completions格式
