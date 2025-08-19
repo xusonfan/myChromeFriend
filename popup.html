@@ -100,6 +100,20 @@
       width: 100%;
       box-sizing: border-box; /* 添加此行以确保宽度计算正确 */
     }
+    .footer {
+      margin-top: 15px;
+      text-align: right;
+      font-size: 0.9em;
+      color: #888;
+    }
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+      margin-left: 10px;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
   </style>
   <style>
     .bordered-group {
@@ -222,6 +236,11 @@
 
   <button id="save-button">保存</button>
   <div id="status"></div>
+
+  <div class="footer">
+    <a id="version-display" href="#" target="_blank"></a>
+    <a href="https://github.com/xusonfan/myChromeFriend" target="_blank" title="访问项目主页">关于</a>
+  </div>
 
   <script src="popup.js"></script>
 </body>

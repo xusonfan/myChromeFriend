@@ -342,6 +342,14 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
   }, 100);
+
+  // 获取并显示版本号
+  const version = chrome.runtime.getManifest().version;
+  const versionDisplay = document.getElementById('version-display');
+  if (versionDisplay) {
+    versionDisplay.textContent = `版本号 v${version}`;
+    versionDisplay.href = `https://github.com/xusonfan/myChromeFriend/releases/tag/${version}`;
+  }
 });
 document.getElementById('save-button').addEventListener('click', saveOptions);
 document.getElementById('fetch-models-button').addEventListener('click', fetchModels);
