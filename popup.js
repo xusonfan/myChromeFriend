@@ -139,6 +139,7 @@ function saveOptions() {
   const askPrompt = document.getElementById('ask-prompt').value;
   const dialogOpacity = document.getElementById('dialog-opacity').value;
   const dialogFontSize = document.getElementById('dialog-font-size').value;
+  const overallScale = document.getElementById('overall-scale').value;
   const blacklist = document.getElementById('blacklist').value;
   // 快捷键现在通过 chrome://extensions/shortcuts 管理
   const autoSummarize = document.getElementById('auto-summarize').checked;
@@ -155,6 +156,7 @@ function saveOptions() {
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
     dialogOpacity: 0.6,
     dialogFontSize: 14,
+    overallScale: 100,
     blacklist: '',
     // refreshShortcut 和 closeShortcut 不再需要存储在这里
     autoSummarize: true
@@ -163,6 +165,7 @@ function saveOptions() {
     const newSettings = {
       dialogOpacity: parseFloat(dialogOpacity),
       dialogFontSize: parseInt(dialogFontSize, 10),
+      overallScale: parseInt(overallScale, 10),
       apiEndpoint: apiEndpoint,
       apiKey: apiKey,
       modelName: modelName,
@@ -187,6 +190,7 @@ function saveOptions() {
       oldSettings.askPrompt !== newSettings.askPrompt ||
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
       oldSettings.dialogFontSize !== newSettings.dialogFontSize ||
+      oldSettings.overallScale !== newSettings.overallScale ||
       oldSettings.blacklist !== newSettings.blacklist ||
       // 快捷键比较逻辑不再需要
       oldSettings.autoSummarize !== newSettings.autoSummarize;
@@ -233,6 +237,7 @@ function restoreOptions() {
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
     dialogOpacity: 0.6, // 默认透明度
     dialogFontSize: 14, // 默认字体大小
+    overallScale: 100, // 默认整体缩放
     blacklist: '', // 默认黑名单为空
     // refreshShortcut 和 closeShortcut 的默认值不再需要
     autoSummarize: true // 默认启用自动总结
@@ -248,6 +253,8 @@ function restoreOptions() {
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
     document.getElementById('dialog-font-size').value = items.dialogFontSize;
     document.getElementById('font-size-value').textContent = items.dialogFontSize;
+    document.getElementById('overall-scale').value = items.overallScale;
+    document.getElementById('overall-scale-value').textContent = items.overallScale;
     document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('auto-summarize').checked = items.autoSummarize;
 
@@ -339,6 +346,10 @@ document.getElementById('dialog-opacity').addEventListener('input', (event) => {
 
 document.getElementById('dialog-font-size').addEventListener('input', (event) => {
   document.getElementById('font-size-value').textContent = event.target.value;
+});
+
+document.getElementById('overall-scale').addEventListener('input', (event) => {
+  document.getElementById('overall-scale-value').textContent = event.target.value;
 });
 
 // 添加一个事件监听器来打开快捷键设置页面

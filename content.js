@@ -56,12 +56,14 @@ function initializeLive2D() {
   live2dWidget.appendChild(live2dCanvas);
   document.body.appendChild(live2dWidget);
 
-  // 从存储中获取用户选择的模型，然后注入脚本
+  // 从存储中获取用户选择的模型和缩放设置，然后注入脚本
   chrome.storage.sync.get({
-    characterModel: 'shizuku' // 默认角色
+    characterModel: 'shizuku', // 默认角色
+    overallScale: 100
   }, (items) => {
     const modelName = items.characterModel;
     live2dWidget.dataset.modelUrl = chrome.runtime.getURL(`live2d_models/${modelName}/${modelName}.model.json`);
+    live2dWidget.dataset.overallScale = items.overallScale;
 
     // 首先注入劫持脚本，以禁用废弃的DOM事件
     const hijackScript = document.createElement('script');
@@ -188,10 +190,21 @@ function initializeLive2D() {
   // 从存储中获取设置并应用样式
   chrome.storage.sync.get({
     dialogOpacity: 0.6,
-    dialogFontSize: 14
+    dialogFontSize: 14,
+    overallScale: 100
   }, (items) => {
+    const scale = items.overallScale / 100;
     dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
     dialogContent.style.fontSize = `${items.dialogFontSize}px`;
+    
+    // 基于缩放比例调整对话框宽度和位置
+    const bottomPosition = 180 * scale;
+    dialogBox.style.width = `${200 * scale}px`;
+    dialogBox.style.maxWidth = `${300 * scale}px`; // 同时缩放maxWidth
+    dialogBox.style.bottom = `${bottomPosition}px`;
+    
+    // 动态调整maxHeight以防止其超出视窗顶部，恢复40px的顶部间距
+    dialogBox.style.maxHeight = `calc(100vh - ${bottomPosition + 40}px)`;
   });
    
   // 添加Webkit滚动条隐藏样式
