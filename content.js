@@ -191,11 +191,19 @@ function initializeLive2D() {
   chrome.storage.sync.get({
     dialogOpacity: 0.6,
     dialogFontSize: 14,
-    overallScale: 100
+    overallScale: 100,
+    dialogSelectable: false
   }, (items) => {
     const scale = items.overallScale / 100;
     dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
     dialogContent.style.fontSize = `${items.dialogFontSize}px`;
+    
+    // 根据设置决定对话框是否可以被选中
+    if (items.dialogSelectable) {
+      dialogBox.style.pointerEvents = 'auto';
+    } else {
+      dialogBox.style.pointerEvents = 'none';
+    }
     
     // 基于缩放比例调整对话框宽度和位置
     const bottomPosition = 180 * scale;

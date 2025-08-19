@@ -143,6 +143,7 @@ function saveOptions() {
   const blacklist = document.getElementById('blacklist').value;
   // 快捷键现在通过 chrome://extensions/shortcuts 管理
   const autoSummarize = document.getElementById('auto-summarize').checked;
+  const dialogSelectable = document.getElementById('dialog-selectable').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -159,7 +160,8 @@ function saveOptions() {
     overallScale: 100,
     blacklist: '',
     // refreshShortcut 和 closeShortcut 不再需要存储在这里
-    autoSummarize: true
+    autoSummarize: true,
+    dialogSelectable: false
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -176,7 +178,8 @@ function saveOptions() {
       askPrompt: askPrompt,
       blacklist: blacklist,
       // refreshShortcut 和 closeShortcut 不再需要存储在这里
-      autoSummarize: autoSummarize
+      autoSummarize: autoSummarize,
+      dialogSelectable: dialogSelectable
     };
 
     const hasChanges =
@@ -193,7 +196,8 @@ function saveOptions() {
       oldSettings.overallScale !== newSettings.overallScale ||
       oldSettings.blacklist !== newSettings.blacklist ||
       // 快捷键比较逻辑不再需要
-      oldSettings.autoSummarize !== newSettings.autoSummarize;
+      oldSettings.autoSummarize !== newSettings.autoSummarize ||
+      oldSettings.dialogSelectable !== newSettings.dialogSelectable;
 
     chrome.storage.sync.set(newSettings, () => {
       const status = document.getElementById('status');
@@ -240,7 +244,8 @@ function restoreOptions() {
     overallScale: 100, // 默认整体缩放
     blacklist: '', // 默认黑名单为空
     // refreshShortcut 和 closeShortcut 的默认值不再需要
-    autoSummarize: true // 默认启用自动总结
+    autoSummarize: true, // 默认启用自动总结
+    dialogSelectable: false
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -257,6 +262,7 @@ function restoreOptions() {
     document.getElementById('overall-scale-value').textContent = items.overallScale;
     document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('auto-summarize').checked = items.autoSummarize;
+    document.getElementById('dialog-selectable').checked = items.dialogSelectable;
 
 
     // 初始化UI状态
