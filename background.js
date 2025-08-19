@@ -183,9 +183,10 @@ chrome.action.onClicked.addListener((tab) => {
   chrome.tabs.query({ url: optionsUrl }, (tabs) => {
     if (tabs.length > 0) {
       // 如果找到了，就激活那个标签页
-      chrome.tabs.update(tabs.id, { active: true });
+      const existingTab = tabs[0];
+      chrome.tabs.update(existingTab.id, { active: true });
       // 如果标签页所在的窗口不是当前窗口，也激活那个窗口
-      chrome.windows.update(tabs.windowId, { focused: true });
+      chrome.windows.update(existingTab.windowId, { focused: true });
     } else {
       // 如果没找到，就创建一个新的标签页
       chrome.tabs.create({ url: optionsUrl });
