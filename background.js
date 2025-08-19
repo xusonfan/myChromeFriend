@@ -173,3 +173,22 @@ chrome.commands.onCommand.addListener((command) => {
     }
   });
 });
+
+// 监听插件图标的点击事件
+chrome.action.onClicked.addListener((tab) => {
+  // 定义设置页面的URL
+  const optionsUrl = chrome.runtime.getURL('options.html');
+
+  // 查询是否已经有打开的设置页面
+  chrome.tabs.query({ url: optionsUrl }, (tabs) => {
+    if (tabs.length > 0) {
+      // 如果找到了，就激活那个标签页
+      chrome.tabs.update(tabs.id, { active: true });
+      // 如果标签页所在的窗口不是当前窗口，也激活那个窗口
+      chrome.windows.update(tabs.windowId, { focused: true });
+    } else {
+      // 如果没找到，就创建一个新的标签页
+      chrome.tabs.create({ url: optionsUrl });
+    }
+  });
+});

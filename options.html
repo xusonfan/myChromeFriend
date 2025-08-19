@@ -1138,13 +1138,13 @@
           <div class="form-group">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="auto-summarize" checked>
-              <span class="checkbox-label">自动总结页面</span>
+              <span class="checkbox-label">自动总结（取消勾选后只能通过快捷键触发总结）</span>
             </div>
           </div>
           <div class="form-group">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="dialog-selectable">
-              <span class="checkbox-label">禁用鼠标穿透（允许选中）</span>
+              <span class="checkbox-label">禁用鼠标穿透对话框（允许选中对话框和滚动）</span>
             </div>
           </div>
           <div class="form-group">
@@ -1153,12 +1153,12 @@
               <span class="checkbox-label">启用划词提问</span>
             </div>
             <div id="ask-prompt-group" class="sub-group">
-              <label for="ask-prompt">划词提问提示词</label>
+              <label for="ask-prompt">划词提问提示词（选中文字变量：{selection}，网页上下文变量：{context}）</label>
               <textarea id="ask-prompt" placeholder="例如: 请基于网页内容，以动漫少女的口吻解释这段文本..."></textarea>
             </div>
           </div>
           <div class="form-group">
-            <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理浏览器快捷键</button>
+            <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理快捷键</button>
           </div>
         </div>
 
@@ -1166,7 +1166,7 @@
         <div class="settings-panel" id="content-settings">
           <h2 class="panel-title">内容控制</h2>
           <div class="form-group">
-            <label for="blacklist">网址黑名单 (每行一个)</label>
+            <label for="blacklist">网址黑名单 (每行一个，支持域名匹配，同域名下全部禁用)</label>
             <textarea id="blacklist" placeholder="例如: https://www.google.com"></textarea>
           </div>
         </div>
