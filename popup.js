@@ -140,7 +140,7 @@ function saveOptions() {
   const dialogOpacity = document.getElementById('dialog-opacity').value;
   const dialogFontSize = document.getElementById('dialog-font-size').value;
   const blacklist = document.getElementById('blacklist').value;
-  const refreshShortcut = document.getElementById('refresh-shortcut').value;
+  // 快捷键现在通过 chrome://extensions/shortcuts 管理
   const autoSummarize = document.getElementById('auto-summarize').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
@@ -156,7 +156,7 @@ function saveOptions() {
     dialogOpacity: 0.6,
     dialogFontSize: 14,
     blacklist: '',
-    refreshShortcut: '',
+    // refreshShortcut 和 closeShortcut 不再需要存储在这里
     autoSummarize: true
   }, (oldSettings) => {
     // 检查设置是否有变化
@@ -172,7 +172,7 @@ function saveOptions() {
       enableFloatingButton: enableFloatingButton,
       askPrompt: askPrompt,
       blacklist: blacklist,
-      refreshShortcut: refreshShortcut,
+      // refreshShortcut 和 closeShortcut 不再需要存储在这里
       autoSummarize: autoSummarize
     };
 
@@ -188,7 +188,7 @@ function saveOptions() {
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
       oldSettings.dialogFontSize !== newSettings.dialogFontSize ||
       oldSettings.blacklist !== newSettings.blacklist ||
-      oldSettings.refreshShortcut !== newSettings.refreshShortcut ||
+      // 快捷键比较逻辑不再需要
       oldSettings.autoSummarize !== newSettings.autoSummarize;
 
     chrome.storage.sync.set(newSettings, () => {
@@ -234,7 +234,7 @@ function restoreOptions() {
     dialogOpacity: 0.6, // 默认透明度
     dialogFontSize: 14, // 默认字体大小
     blacklist: '', // 默认黑名单为空
-    refreshShortcut: '', // 默认快捷键为空
+    // refreshShortcut 和 closeShortcut 的默认值不再需要
     autoSummarize: true // 默认启用自动总结
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
@@ -249,14 +249,7 @@ function restoreOptions() {
     document.getElementById('dialog-font-size').value = items.dialogFontSize;
     document.getElementById('font-size-value').textContent = items.dialogFontSize;
     document.getElementById('blacklist').value = items.blacklist;
-    document.getElementById('refresh-shortcut').value = items.refreshShortcut;
     document.getElementById('auto-summarize').checked = items.autoSummarize;
-    const shortcutButton = document.getElementById('refresh-shortcut-button');
-    if (items.refreshShortcut) {
-      shortcutButton.textContent = items.refreshShortcut;
-    } else {
-      shortcutButton.textContent = '点击设置';
-    }
 
 
     // 初始化UI状态
@@ -348,43 +341,7 @@ document.getElementById('dialog-font-size').addEventListener('input', (event) =>
   document.getElementById('font-size-value').textContent = event.target.value;
 });
 
-document.getElementById('refresh-shortcut-button').addEventListener('click', () => {
-  const button = document.getElementById('refresh-shortcut-button');
-  const shortcutInput = document.getElementById('refresh-shortcut');
-  button.textContent = '请按键...';
-
-  const keydownHandler = (event) => {
-    event.preventDefault();
-    // 忽略单独的修饰键
-    if (['Control', 'Alt', 'Shift', 'Meta'].includes(event.key)) {
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      button.textContent = shortcutInput.value || '点击设置';
-      document.removeEventListener('keydown', keydownHandler);
-      return;
-    }
-
-    const parts = [];
-    if (event.ctrlKey) parts.push('ctrl');
-    if (event.altKey) parts.push('alt');
-    if (event.shiftKey) parts.push('shift');
-    parts.push(event.key.toLowerCase());
-    
-    const shortcutString = parts.join('+');
-    shortcutInput.value = shortcutString;
-    button.textContent = shortcutString;
-    
-    document.removeEventListener('keydown', keydownHandler);
-  };
-
-  document.addEventListener('keydown', keydownHandler);
-});
-
-document.getElementById('reset-shortcut-button').addEventListener('click', () => {
-  const button = document.getElementById('refresh-shortcut-button');
-  const shortcutInput = document.getElementById('refresh-shortcut');
-  shortcutInput.value = '';
-  button.textContent = '点击设置';
+// 添加一个事件监听器来打开快捷键设置页面
+document.getElementById('manage-shortcuts').addEventListener('click', () => {
+  chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
 });

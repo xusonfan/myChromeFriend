@@ -1,6 +1,21 @@
+const fetchControllers = {};
+
 // 监听来自content.js的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'GET_SUMMARY') {
+    const tabId = sender.tab.id;
+
+    // 如果该标签页有正在进行的请求，先中止它
+    if (fetchControllers[tabId]) {
+      console.log(`中止标签页 ${tabId} 之前的AI请求。`);
+      fetchControllers[tabId].abort();
+    }
+
+    // 创建一个新的AbortController
+    const controller = new AbortController();
+    fetchControllers[tabId] = controller;
+    const signal = controller.signal;
+
     // 从Chrome存储中获取API配置
     chrome.storage.sync.get(['apiEndpoint', 'apiKey', 'modelName', 'prompt', 'maxTokens'], (config) => {
       console.log("收到了内容脚本的请求，正在获取配置...");
@@ -78,7 +93,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${API_KEY}` // 根据你的API要求修改认证方式
       },
-      body: JSON.stringify(requestData)
+      body: JSON.stringify(requestData),
+      signal: signal // 传递signal
     })
     .then(response => {
       console.log("收到API的原始响应:", response);
@@ -92,7 +108,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       let summary = "未能获取总结，或API返回格式不正确。";
 
       if (data.choices && data.choices.length > 0) {
-        const firstChoice = data.choices[0]; // 修正：正确获取数组的第一个元素
+        const firstChoice = data.choices[0];
         console.log("正在检查API返回的第一个选项:", firstChoice);
 
         if (firstChoice.message && firstChoice.message.content) {
@@ -110,12 +126,50 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       sendResponse({ summary: summary });
     })
     .catch(error => {
-      console.error('调用AI API时出错:', error);
-      sendResponse({ summary: `调用API时出错: ${error.message}。请检查后台日志获取详细信息。` });
+      if (error.name === 'AbortError') {
+        console.log(`标签页 ${tabId} 的Fetch请求被用户中止。`);
+      } else {
+        console.error('调用AI API时出错:', error);
+        sendResponse({ summary: `调用API时出错: ${error.message}。请检查后台日志获取详细信息。` });
+      }
+    })
+    .finally(() => {
+      delete fetchControllers[tabId]; // 请求结束后删除控制器
     });
     });
 
     // 返回true表示我们将异步发送响应
     return true;
   }
+});
+
+// 监听快捷键命令
+chrome.commands.onCommand.addListener((command) => {
+  console.log(`接收到命令: ${command}`);
+  // 查询当前活动的标签页
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    if (tabs.length > 0) {
+      const tabId = tabs[0].id;
+      // 根据命令类型发送不同的消息到内容脚本
+      if (command === "refresh_summary") {
+        console.log(`向标签页 ${tabId} 发送 'REFRESH_SUMMARY' 消息`);
+        chrome.tabs.sendMessage(tabId, { type: "REFRESH_SUMMARY" });
+      } else if (command === "close_dialog") {
+        console.log(`向标签页 ${tabId} 发送 'CLOSE_DIALOG' 消息`);
+        chrome.tabs.sendMessage(tabId, { type: "CLOSE_DIALOG" });
+
+        // 中止该标签页的fetch请求
+        if (fetchControllers[tabId]) {
+          console.log(`中止标签页 ${tabId} 的AI请求。`);
+          fetchControllers[tabId].abort();
+          delete fetchControllers[tabId];
+        }
+      } else if (command === "toggle_visibility") {
+        console.log(`向标签页 ${tabId} 发送 'TOGGLE_VISIBILITY' 消息`);
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_VISIBILITY" });
+      }
+    } else {
+      console.log("没有找到活动的标签页。");
+    }
+  });
 });

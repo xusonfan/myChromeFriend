@@ -242,8 +242,15 @@ function initializeLive2D() {
       .replace(/\n/gim, '<br>');
   }
 
+  let streamTimer = null; // 用于控制流式输出的定时器
+
   // 流式显示函数（增强版）
   function streamText(element, text, speed = 15) {
+    // 清除之前的定时器
+    if (streamTimer) {
+      clearTimeout(streamTimer);
+    }
+
     const contentElement = element.firstChild;
     contentElement.innerHTML = '';
     let index = 0;
@@ -259,7 +266,9 @@ function initializeLive2D() {
         contentElement.innerHTML = parseMarkdown(currentText);
         
         // 继续下一个字符
-        setTimeout(typeWriter, speed);
+        streamTimer = setTimeout(typeWriter, speed);
+      } else {
+        streamTimer = null; // 输出完成，清除定时器ID
       }
     }
     
@@ -388,26 +397,42 @@ function initializeLive2D() {
     }
   });
 
-  // 添加快捷键监听
-  chrome.storage.sync.get({
-    refreshShortcut: '' // 默认不设置快捷键
-  }, (items) => {
-    if (items.refreshShortcut) {
-      const shortcut = items.refreshShortcut.toLowerCase().split('+');
-      const key = shortcut[shortcut.length - 1];
-      const ctrl = shortcut.includes('ctrl');
-      const alt = shortcut.includes('alt');
-      const shift = shortcut.includes('shift');
-
-      document.addEventListener('keydown', (e) => {
-        if (e.key.toLowerCase() === key &&
-            e.ctrlKey === ctrl &&
-            e.altKey === alt &&
-            e.shiftKey === shift) {
-          e.preventDefault();
-          getSummaryOnLoad();
+  // 监听来自background.js的消息
+  chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+    if (request.type === "REFRESH_SUMMARY") {
+      console.log("收到刷新总结内容的命令");
+      getSummaryOnLoad();
+    } else if (request.type === "CLOSE_DIALOG") {
+      console.log("收到关闭对话框的命令，将清空内容并隐藏。");
+      const dialogBox = document.getElementById('dialog-box');
+      if (dialogBox) {
+        dialogBox.style.display = 'none';
+        // 停止任何正在进行的流式输出
+        if (streamTimer) {
+          clearTimeout(streamTimer);
+          streamTimer = null;
         }
-      });
+        // 清空对话框内容
+        if (dialogBox.firstChild) {
+          dialogBox.firstChild.innerHTML = '';
+        }
+      }
+    } else if (request.type === "TOGGLE_VISIBILITY") {
+      console.log("收到切换对话框可见性的命令");
+      const dialogBox = document.getElementById('dialog-box');
+      if (dialogBox) {
+        const hasContent = dialogBox.firstChild && dialogBox.firstChild.innerHTML.trim() !== '';
+        if (dialogBox.style.display === 'none') {
+          // 仅当有内容时才显示
+          if (hasContent) {
+            dialogBox.style.display = 'block';
+          } else {
+            console.log("对话框内容为空，不执行显示操作。");
+          }
+        } else {
+          dialogBox.style.display = 'none';
+        }
+      }
     }
   });
 }

@@ -9,6 +9,17 @@
     "storage",
     "tabs"
   ],
+  "commands": {
+    "refresh_summary": {
+      "description": "刷新总结内容"
+    },
+    "close_dialog": {
+      "description": "关闭并终止对话"
+    },
+    "toggle_visibility": {
+      "description": "切换对话框可见性"
+    }
+  },
   "background": {
     "service_worker": "background.js"
   },
