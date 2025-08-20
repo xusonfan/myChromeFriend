@@ -93,21 +93,27 @@ function initializeLive2D() {
 
   let conversationHistory = []; // 用于存储对话历史
 
+  // 创建一个包裹对话框和按钮的容器
+  const dialogWrapper = document.createElement('div');
+  dialogWrapper.id = 'dialog-wrapper';
+  dialogWrapper.style.position = 'fixed';
+  dialogWrapper.style.zIndex = '9999';
+  dialogWrapper.style.bottom = '180px';
+  dialogWrapper.style.left = '0px';
+  dialogWrapper.style.display = 'none'; // 默认隐藏
+
   // 创建一个div作为对话框
   const dialogBox = document.createElement('div');
   dialogBox.id = 'dialog-box';
-  dialogBox.style.position = 'fixed';
-  dialogBox.style.zIndex = '9999'; // 设置一个很高的z-index值
-  dialogBox.style.bottom = '180px'; // 将对话框下移，使其更贴近人物
-  dialogBox.style.left = '0px'; // 直接放在人物头顶
+  dialogBox.style.position = 'relative'; // 改为相对定位
   dialogBox.style.width = '200px'; // 减小宽度
   dialogBox.style.maxWidth = '300px'; // 限制最大宽度
-  dialogBox.style.padding = '8px 8px 25px 8px'; // 增加底部内边距为按钮预留空间
+  dialogBox.style.padding = '8px'; // 移除为按钮预留的底部空间
   dialogBox.style.maxHeight = 'calc(100vh - 220px)'; // 限制最大高度，避免超出视窗
   dialogBox.style.overflowY = 'auto'; // 内容超出时显示滚动条
   dialogBox.style.border = '1px solid rgba(0, 0, 0, 0.2)'; // 半透明边框
   dialogBox.style.borderRadius = '12px';
-  dialogBox.style.display = 'none'; // 默认隐藏
+  // dialogBox 自身不再控制显示/隐藏，交由 wrapper
   dialogBox.style.boxShadow = '0 6px 20px rgba(0, 0, 0, 0.2)'; // 增强阴影效果
   dialogBox.style.pointerEvents = 'none'; // 添加鼠标穿透功能
   dialogBox.style.transition = 'all 0.3s ease'; // 添加过渡效果
@@ -125,13 +131,28 @@ function initializeLive2D() {
   // 隐藏滚动条样式但保留滚动功能
   dialogBox.style.scrollbarWidth = 'none'; // Firefox
 
+  // 创建按钮容器
+  const buttonContainer = document.createElement('div');
+  buttonContainer.id = 'dialog-button-container';
+  Object.assign(buttonContainer.style, {
+    position: 'absolute',
+    bottom: '-30px', // 调整到对话框外部，但更近
+    right: '0px',
+    display: 'flex',
+    flexDirection: 'row',
+    gap: '8px',
+    opacity: '0',
+    visibility: 'hidden',
+    transition: 'opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease',
+    transform: 'translateY(10px)',
+    pointerEvents: 'none', // 默认无指针事件
+  });
+
   // 创建关闭按钮
   const closeButton = document.createElement('span');
   // 显著放大关闭按钮SVG，使其视觉上更协调
   closeButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M5.293 5.293a1 1 0 0 1 1.414 0L8 6.586l1.293-1.293a1 1 0 1 1 1.414 1.414L9.414 8l1.293 1.293a1 1 0 0 1-1.414 1.414L8 9.414l-1.293 1.293a1 1 0 0 1-1.414-1.414L6.586 8 5.293 6.707a1 1 0 0 1 0-1.414z"/></svg>';
-  closeButton.style.position = 'absolute';
-  closeButton.style.bottom = '5px';
-  closeButton.style.right = '8px';
+  // 移除绝对定位，样式由flex容器控制
   closeButton.style.cursor = 'pointer';
   closeButton.style.display = 'flex';
   closeButton.style.alignItems = 'center';
@@ -140,12 +161,12 @@ function initializeLive2D() {
   closeButton.style.height = '18px';
   closeButton.style.color = '#666';
   closeButton.style.transition = 'all 0.2s ease';
-  closeButton.style.pointerEvents = 'auto'; // 关闭按钮需要能够接收鼠标事件
+  closeButton.style.pointerEvents = 'auto'; // 按钮本身可以接收事件
 
   // 添加关闭事件
   closeButton.addEventListener('click', (e) => {
     e.stopPropagation(); // 防止事件冒泡
-    dialogBox.style.display = 'none';
+    dialogWrapper.style.display = 'none'; // 控制 wrapper 的显示
     // 关闭对话框时，也隐藏追问输入框
     if (askInput) {
       askInput.style.display = 'none';
@@ -154,7 +175,7 @@ function initializeLive2D() {
 
   // 添加悬停效果
   closeButton.addEventListener('mouseenter', () => {
-    closeButton.style.color = '#333';
+    closeButton.style.color = '#007bff'; // 增强悬停颜色
     closeButton.style.transform = 'scale(1.1)';
   });
 
@@ -167,9 +188,7 @@ function initializeLive2D() {
   const refreshButton = document.createElement('span');
   // 使用SVG图标以确保正确的纵横比和对齐
   refreshButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>';
-  refreshButton.style.position = 'absolute';
-  refreshButton.style.bottom = '5px';
-  refreshButton.style.right = '28px'; // 调整位置，使其在关闭按钮左侧
+  // 移除绝对定位
   refreshButton.style.cursor = 'pointer';
   refreshButton.style.display = 'flex';
   refreshButton.style.alignItems = 'center';
@@ -188,7 +207,7 @@ function initializeLive2D() {
    
   // 添加悬停效果
   refreshButton.addEventListener('mouseenter', () => {
-    refreshButton.style.color = '#333';
+    refreshButton.style.color = '#007bff'; // 增强悬停颜色
     refreshButton.style.transform = 'scale(1.1)';
   });
    
@@ -201,9 +220,7 @@ function initializeLive2D() {
   const askButton = document.createElement('span');
   // 使用SVG图标以确保正确的纵横比和对齐
   askButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/></svg>';
-  askButton.style.position = 'absolute';
-  askButton.style.bottom = '5px';
-  askButton.style.right = '48px'; // 调整位置，在刷新按钮左侧
+  // 移除绝对定位
   askButton.style.cursor = 'pointer';
   // 设置为flex容器以完美居中SVG
   askButton.style.display = 'flex';
@@ -278,7 +295,7 @@ function initializeLive2D() {
 
   // 添加悬停效果
   askButton.addEventListener('mouseenter', () => {
-    askButton.style.color = '#333';
+    askButton.style.color = '#007bff'; // 增强悬停颜色
     askButton.style.transform = 'scale(1.1)';
   });
 
@@ -295,10 +312,49 @@ function initializeLive2D() {
     }
   });
 
-  dialogBox.appendChild(askButton);
-  dialogBox.appendChild(refreshButton);
-  dialogBox.appendChild(closeButton);
-  document.body.appendChild(dialogBox);
+  // 将按钮添加到按钮容器
+  buttonContainer.appendChild(askButton);
+  buttonContainer.appendChild(refreshButton);
+  buttonContainer.appendChild(closeButton);
+
+  // 添加带延迟的鼠标悬浮事件，以解决按钮无法点击的问题
+  let hideButtonsTimeout = null;
+
+  const showButtons = () => {
+    if (hideButtonsTimeout) {
+      clearTimeout(hideButtonsTimeout);
+      hideButtonsTimeout = null;
+    }
+    buttonContainer.style.opacity = '1';
+    buttonContainer.style.visibility = 'visible';
+    buttonContainer.style.transform = 'translateY(0)';
+    buttonContainer.style.pointerEvents = 'auto';
+  };
+
+  const hideButtons = () => {
+    // 如果追问输入框是打开的，则不隐藏按钮
+    if (askInput.style.display === 'block') {
+      return;
+    }
+    buttonContainer.style.opacity = '0';
+    buttonContainer.style.visibility = 'hidden';
+    buttonContainer.style.transform = 'translateY(10px)';
+    buttonContainer.style.pointerEvents = 'none';
+  };
+
+  const startHideTimer = () => {
+    hideButtonsTimeout = setTimeout(hideButtons, 300);
+  };
+
+  dialogWrapper.addEventListener('mouseenter', showButtons);
+  dialogWrapper.addEventListener('mouseleave', startHideTimer);
+  buttonContainer.addEventListener('mouseenter', showButtons);
+  buttonContainer.addEventListener('mouseleave', startHideTimer);
+
+  // 将对话框和按钮容器添加到 wrapper
+  dialogWrapper.appendChild(dialogBox);
+  dialogWrapper.appendChild(buttonContainer);
+  document.body.appendChild(dialogWrapper);
 
   // 从存储中获取设置并应用样式
   chrome.storage.sync.get({
@@ -319,7 +375,7 @@ function initializeLive2D() {
     const bottomPosition = 180 * scale;
     dialogBox.style.width = `${200 * scale}px`;
     dialogBox.style.maxWidth = `${300 * scale}px`; // 同时缩放maxWidth
-    dialogBox.style.bottom = `${bottomPosition}px`;
+    dialogWrapper.style.bottom = `${bottomPosition}px`; // 应用到 wrapper
     
     // 根据设置决定对话框是否可以被选中，并调整最大高度
     if (items.dialogSelectable) {
@@ -426,7 +482,7 @@ function initializeLive2D() {
     const contentElement = dialogBox.firstChild;
     // 立即显示"正在思考中"并保持可见
     contentElement.innerHTML = '飞速阅读中...';
-    dialogBox.style.display = 'block';
+    dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
     conversationHistory = []; // 开始新的总结时，清空历史记录
 
     // 从页面获取文本内容
@@ -511,7 +567,7 @@ function initializeLive2D() {
         if (lastSelectedText) {
           const contentElement = dialogBox.firstChild;
           contentElement.innerHTML = '正在思考中...';
-          dialogBox.style.display = 'block';
+          dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
           conversationHistory = []; // 开始新的划词提问时，清空历史记录
 
           const pageContext = document.body.innerText;
@@ -564,9 +620,9 @@ function initializeLive2D() {
       getSummaryOnLoad();
     } else if (request.type === "CLOSE_DIALOG") {
       console.log("收到关闭对话框的命令，将清空内容并隐藏。");
-      const dialogBox = document.getElementById('dialog-box');
-      if (dialogBox) {
-        dialogBox.style.display = 'none';
+      const dialogWrapper = document.getElementById('dialog-wrapper');
+      if (dialogWrapper) {
+        dialogWrapper.style.display = 'none';
         // 隐藏追问输入框
         const askInput = document.querySelector('#dialog-box input[type="text"]');
         if (askInput) {
@@ -584,18 +640,19 @@ function initializeLive2D() {
       }
     } else if (request.type === "TOGGLE_VISIBILITY") {
       console.log("收到切换对话框可见性的命令");
+      const dialogWrapper = document.getElementById('dialog-wrapper');
       const dialogBox = document.getElementById('dialog-box');
-      if (dialogBox) {
+      if (dialogWrapper && dialogBox) {
         const hasContent = dialogBox.firstChild && dialogBox.firstChild.innerHTML.trim() !== '';
-        if (dialogBox.style.display === 'none') {
+        if (dialogWrapper.style.display === 'none') {
           // 仅当有内容时才显示
           if (hasContent) {
-            dialogBox.style.display = 'block';
+            dialogWrapper.style.display = 'block';
           } else {
             console.log("对话框内容为空，不执行显示操作。");
           }
         } else {
-          dialogBox.style.display = 'none';
+          dialogWrapper.style.display = 'none';
           // 隐藏对话框时，也隐藏追问输入框
           const askInput = document.querySelector('#dialog-box input[type="text"]');
           if (askInput) {
