@@ -420,7 +420,7 @@ function initializeLive2D() {
     #dialog-box {
       -ms-overflow-style: none;  /* IE and Edge */
       scrollbar-width: none;  /* Firefox */
-      animation: floatAnimation 2s ease-in-out infinite;
+      animation: floatAnimation 2s ease-in-out infinite !important;
     }
     #dialog-box::-webkit-scrollbar {
       width: 0px;
