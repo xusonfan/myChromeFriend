@@ -253,6 +253,23 @@ function initializeLive2D() {
 
   dialogBox.appendChild(askInput);
 
+  // 防止对话框滚动时带动页面滚动
+  dialogBox.addEventListener('wheel', (e) => {
+    // 如果对话框内容本身就不可滚动，则什么都不做
+    if (dialogBox.scrollHeight <= dialogBox.clientHeight) {
+      return;
+    }
+
+    const isAtTop = dialogBox.scrollTop === 0;
+    // 检查是否滚动到底部（添加1px的容差以处理可能的像素不整数）
+    const isAtBottom = dialogBox.scrollTop + dialogBox.clientHeight >= dialogBox.scrollHeight - 1;
+
+    // 如果鼠标向上滚动且已经到顶，或者鼠标向下滚动且已经到底，则阻止页面滚动
+    if ((isAtTop && e.deltaY < 0) || (isAtBottom && e.deltaY > 0)) {
+      e.preventDefault();
+    }
+  }, { passive: false }); // 必须设置 passive 为 false 才能调用 preventDefault
+
   // 添加追问按钮事件
   askButton.addEventListener('click', (e) => {
     e.stopPropagation();
