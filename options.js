@@ -158,6 +158,7 @@ function saveOptions() {
   const modelName = document.getElementById('model-name').value;
   const prompt = document.getElementById('prompt').value;
   const maxTokens = document.getElementById('max-tokens').value;
+  const retryCount = document.getElementById('retry-count').value;
   const characterModel = document.getElementById('character-model').value;
   const enableFloatingButton = document.getElementById('enable-floating-button').checked;
   const askPrompt = document.getElementById('ask-prompt').value;
@@ -176,6 +177,7 @@ function saveOptions() {
     modelName: 'gpt-4',
     prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。',
     maxTokens: '1000',
+    retryCount: 3, // 默认重试3次
     characterModel: 'shizuku',
     enableFloatingButton: true,
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
@@ -197,6 +199,7 @@ function saveOptions() {
       modelName: modelName,
       prompt: prompt,
       maxTokens: maxTokens,
+      retryCount: parseInt(retryCount, 10) || 0,
       characterModel: characterModel,
       enableFloatingButton: enableFloatingButton,
       askPrompt: askPrompt,
@@ -212,6 +215,7 @@ function saveOptions() {
       oldSettings.modelName !== newSettings.modelName ||
       oldSettings.prompt !== newSettings.prompt ||
       oldSettings.maxTokens !== newSettings.maxTokens ||
+      oldSettings.retryCount !== newSettings.retryCount ||
       oldSettings.characterModel !== newSettings.characterModel ||
       oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
       oldSettings.askPrompt !== newSettings.askPrompt ||
@@ -259,6 +263,7 @@ function restoreOptions() {
     modelName: 'gpt-4', // 默认值
     prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。', // 默认值
     maxTokens: '1000', // 默认值
+    retryCount: 3, // 默认值
     characterModel: 'shizuku', // 默认角色
     enableFloatingButton: true, // 默认启用
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
@@ -274,6 +279,7 @@ function restoreOptions() {
     document.getElementById('api-key').value = items.apiKey;
     document.getElementById('prompt').value = items.prompt;
     document.getElementById('max-tokens').value = items.maxTokens;
+    document.getElementById('retry-count').value = items.retryCount;
     document.getElementById('character-model').value = items.characterModel;
     document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
     document.getElementById('ask-prompt').value = items.askPrompt;

@@ -17,7 +17,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const signal = controller.signal;
 
     // 从Chrome存储中获取API配置
-    chrome.storage.sync.get(['apiEndpoint', 'apiKey', 'modelName', 'prompt', 'maxTokens'], (config) => {
+    chrome.storage.sync.get(['apiEndpoint', 'apiKey', 'modelName', 'prompt', 'maxTokens', 'retryCount'], (config) => {
       console.log("收到了内容脚本的请求，正在获取配置...");
 
       if (!config.apiEndpoint || !config.apiKey) {
@@ -32,6 +32,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const MODEL_NAME = config.modelName || 'gpt-4'; // 使用保存的模型或默认值
       const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。'; // 使用保存的提示词或默认值
       const MAX_TOKENS = config.maxTokens || '1000'; // 使用保存的最大令牌数或默认值
+      const RETRY_COUNT = config.retryCount || 3; // 使用保存的重试次数或默认值
 
       // 准备发送到API的数据，采用OpenAI Chat Completions格式
       const requestData = {
@@ -86,24 +87,38 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         chatEndpoint = API_ENDPOINT;
       }
 
-      // 使用fetch发送请求
-      fetch(chatEndpoint, {
+      // 使用fetch发送请求，并加入重试逻辑
+      const fetchWithRetry = async (url, options, retries) => {
+        for (let i = 0; i <= retries; i++) {
+          try {
+            const response = await fetch(url, options);
+            console.log(`第 ${i + 1} 次尝试，收到API的原始响应:`, response);
+            if (!response.ok) {
+              throw new Error(`HTTP 错误! 状态码: ${response.status}`);
+            }
+            return await response.json(); // 成功则返回结果
+          } catch (error) {
+            console.log(`第 ${i + 1} 次请求失败:`, error.message);
+            if (i < retries) {
+              console.log(`剩余重试次数: ${retries - i - 1}。将在1秒后重试...`);
+              await new Promise(resolve => setTimeout(resolve, 1000)); // 等待1秒
+            } else {
+              throw error; // 最后一次尝试失败，则抛出错误
+            }
+          }
+        }
+      };
+
+      fetchWithRetry(chatEndpoint, {
         method: 'POST',
         headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}` // 根据你的API要求修改认证方式
-      },
-      body: JSON.stringify(requestData),
-      signal: signal // 传递signal
-    })
-    .then(response => {
-      console.log("收到API的原始响应:", response);
-      if (!response.ok) {
-        throw new Error(`HTTP 错误! 状态码: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then(data => {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}` // 根据你的API要求修改认证方式
+        },
+        body: JSON.stringify(requestData),
+        signal: signal // 传递signal
+      }, RETRY_COUNT)
+      .then(data => {
       console.log("API响应数据 (JSON解析后):", data);
       let summary = "未能获取总结，或API返回格式不正确。";
 
