@@ -146,6 +146,10 @@ function initializeLive2D() {
   closeButton.addEventListener('click', (e) => {
     e.stopPropagation(); // 防止事件冒泡
     dialogBox.style.display = 'none';
+    // 关闭对话框时，也隐藏追问输入框
+    if (askInput) {
+      askInput.style.display = 'none';
+    }
   });
 
   // 添加悬停效果
@@ -243,6 +247,10 @@ function initializeLive2D() {
 
   // 添加追问输入框事件
   askInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      askInput.style.display = 'none';
+      return;
+    }
     if (e.key === 'Enter' && askInput.value.trim() !== '') {
       const question = askInput.value.trim();
       askInput.value = '';
@@ -277,6 +285,14 @@ function initializeLive2D() {
   askButton.addEventListener('mouseleave', () => {
     askButton.style.color = '#666';
     askButton.style.transform = 'scale(1)';
+  });
+
+  // 点击页面其他地方时隐藏追问输入框
+  document.addEventListener('mousedown', (e) => {
+    // 检查追问框是否可见，以及点击事件是否发生在追问框和追问按钮之外
+    if (askInput.style.display === 'block' && e.target !== askInput && !askButton.contains(e.target)) {
+      askInput.style.display = 'none';
+    }
   });
 
   dialogBox.appendChild(askButton);
@@ -403,6 +419,10 @@ function initializeLive2D() {
 
   // 页面加载后自动获取总结
   function getSummaryOnLoad() {
+    // 刷新时，隐藏追问输入框
+    if (askInput) {
+      askInput.style.display = 'none';
+    }
     const contentElement = dialogBox.firstChild;
     // 立即显示"正在思考中"并保持可见
     contentElement.innerHTML = '飞速阅读中...';
@@ -547,6 +567,11 @@ function initializeLive2D() {
       const dialogBox = document.getElementById('dialog-box');
       if (dialogBox) {
         dialogBox.style.display = 'none';
+        // 隐藏追问输入框
+        const askInput = document.querySelector('#dialog-box input[type="text"]');
+        if (askInput) {
+          askInput.style.display = 'none';
+        }
         // 停止任何正在进行的流式输出
         if (streamTimer) {
           clearTimeout(streamTimer);
@@ -571,6 +596,11 @@ function initializeLive2D() {
           }
         } else {
           dialogBox.style.display = 'none';
+          // 隐藏对话框时，也隐藏追问输入框
+          const askInput = document.querySelector('#dialog-box input[type="text"]');
+          if (askInput) {
+            askInput.style.display = 'none';
+          }
         }
       }
     } else if (request.type === "TOGGLE_FOLLOW_UP") {
