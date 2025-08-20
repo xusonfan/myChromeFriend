@@ -198,21 +198,22 @@ function initializeLive2D() {
     dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
     dialogContent.style.fontSize = `${items.dialogFontSize}px`;
     
-    // 根据设置决定对话框是否可以被选中
-    if (items.dialogSelectable) {
-      dialogBox.style.pointerEvents = 'auto';
-    } else {
-      dialogBox.style.pointerEvents = 'none';
-    }
-    
     // 基于缩放比例调整对话框宽度和位置
     const bottomPosition = 180 * scale;
     dialogBox.style.width = `${200 * scale}px`;
     dialogBox.style.maxWidth = `${300 * scale}px`; // 同时缩放maxWidth
     dialogBox.style.bottom = `${bottomPosition}px`;
     
-    // 动态调整maxHeight以防止其超出视窗顶部，恢复40px的顶部间距
-    dialogBox.style.maxHeight = `calc(100vh - ${bottomPosition + 40}px)`;
+    // 根据设置决定对话框是否可以被选中，并调整最大高度
+    if (items.dialogSelectable) {
+      dialogBox.style.pointerEvents = 'auto';
+      // 如果不允许鼠标穿透，那么限制对话框的最大高度为可见高度的30%
+      dialogBox.style.maxHeight = '30vh';
+    } else {
+      dialogBox.style.pointerEvents = 'none';
+      // 动态调整maxHeight以防止其超出视窗顶部，恢复40px的顶部间距
+      dialogBox.style.maxHeight = `calc(100vh - ${bottomPosition + 40}px)`;
+    }
   });
    
   // 添加Webkit滚动条隐藏样式
