@@ -34,18 +34,22 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const MAX_TOKENS = config.maxTokens || '1000'; // 使用保存的最大令牌数或默认值
       const RETRY_COUNT = config.retryCount || 3; // 使用保存的重试次数或默认值
 
+      // 确保 request.history 存在且是一个数组
+      if (!request.history || !Array.isArray(request.history)) {
+        console.error("请求格式错误，缺少 history 数组。");
+        sendResponse({ summary: "请求格式错误。" });
+        return;
+      }
+
       // 准备发送到API的数据，采用OpenAI Chat Completions格式
       const requestData = {
         model: MODEL_NAME,
         messages: [
           {
             "role": "system",
-            "content": PROMPT
+            "content": PROMPT // 系统提示词始终置于最前
           },
-          {
-            "role": "user",
-            "content": request.text
-          }
+          ...request.history // 展开对话历史
         ],
         max_tokens: parseInt(MAX_TOKENS) // 使用用户设置的最大令牌数
       };
@@ -182,6 +186,9 @@ chrome.commands.onCommand.addListener((command) => {
       } else if (command === "toggle_visibility") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_VISIBILITY' 消息`);
         chrome.tabs.sendMessage(tabId, { type: "TOGGLE_VISIBILITY" });
+      } else if (command === "toggle_follow_up") {
+        console.log(`向标签页 ${tabId} 发送 'TOGGLE_FOLLOW_UP' 消息`);
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_FOLLOW_UP" });
       }
     } else {
       console.log("没有找到活动的标签页。");

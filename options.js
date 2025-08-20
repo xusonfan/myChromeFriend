@@ -162,6 +162,7 @@ function saveOptions() {
   const characterModel = document.getElementById('character-model').value;
   const enableFloatingButton = document.getElementById('enable-floating-button').checked;
   const askPrompt = document.getElementById('ask-prompt').value;
+  const enableFollowUp = document.getElementById('enable-follow-up').checked;
   const dialogOpacity = document.getElementById('dialog-opacity').value;
   const dialogFontSize = document.getElementById('dialog-font-size').value;
   const overallScale = document.getElementById('overall-scale').value;
@@ -181,6 +182,7 @@ function saveOptions() {
     characterModel: 'shizuku',
     enableFloatingButton: true,
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容"{selection}"，直接解释，不要总结其他内容，不超过100字。\\n\\n网页上下文：{context}',
+    enableFollowUp: true,
     dialogOpacity: 0.6,
     dialogFontSize: 14,
     overallScale: 100,
@@ -203,6 +205,7 @@ function saveOptions() {
       characterModel: characterModel,
       enableFloatingButton: enableFloatingButton,
       askPrompt: askPrompt,
+      enableFollowUp: enableFollowUp,
       blacklist: blacklist,
       // refreshShortcut 和 closeShortcut 不再需要存储在这里
       autoSummarize: autoSummarize,
@@ -219,6 +222,7 @@ function saveOptions() {
       oldSettings.characterModel !== newSettings.characterModel ||
       oldSettings.enableFloatingButton !== newSettings.enableFloatingButton ||
       oldSettings.askPrompt !== newSettings.askPrompt ||
+      oldSettings.enableFollowUp !== newSettings.enableFollowUp ||
       oldSettings.dialogOpacity !== newSettings.dialogOpacity ||
       oldSettings.dialogFontSize !== newSettings.dialogFontSize ||
       oldSettings.overallScale !== newSettings.overallScale ||
@@ -267,6 +271,7 @@ function restoreOptions() {
     characterModel: 'shizuku', // 默认角色
     enableFloatingButton: true, // 默认启用
     askPrompt: '请以一个动漫少女的口吻，结合网页上下文解释我页面中选中的这个内容“{selection}”，直接解释，不要总结其他内容，不超过100字。\n\n网页上下文：{context}', // 默认提示词
+    enableFollowUp: true,
     dialogOpacity: 0.6, // 默认透明度
     dialogFontSize: 14, // 默认字体大小
     overallScale: 100, // 默认整体缩放
@@ -283,6 +288,7 @@ function restoreOptions() {
     document.getElementById('character-model').value = items.characterModel;
     document.getElementById('enable-floating-button').checked = items.enableFloatingButton;
     document.getElementById('ask-prompt').value = items.askPrompt;
+    document.getElementById('enable-follow-up').checked = items.enableFollowUp;
     document.getElementById('dialog-opacity').value = items.dialogOpacity;
     document.getElementById('opacity-value').textContent = items.dialogOpacity;
     document.getElementById('dialog-font-size').value = items.dialogFontSize;

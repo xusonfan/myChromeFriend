@@ -23,7 +23,7 @@ chrome.storage.sync.get({
     });
     
   const currentHostname = window.location.hostname;
-
+    
   const isOnBlacklist = blacklist.some(blacklistedDomain => {
     // 完全匹配或匹配子域名
     // 例如 blacklistedDomain = 'google.com'
@@ -91,6 +91,8 @@ function initializeLive2D() {
     };
   });
 
+  let conversationHistory = []; // 用于存储对话历史
+
   // 创建一个div作为对话框
   const dialogBox = document.createElement('div');
   dialogBox.id = 'dialog-box';
@@ -100,7 +102,7 @@ function initializeLive2D() {
   dialogBox.style.left = '0px'; // 直接放在人物头顶
   dialogBox.style.width = '200px'; // 减小宽度
   dialogBox.style.maxWidth = '300px'; // 限制最大宽度
-  dialogBox.style.padding = '8px';
+  dialogBox.style.padding = '8px 8px 25px 8px'; // 增加底部内边距为按钮预留空间
   dialogBox.style.maxHeight = 'calc(100vh - 220px)'; // 限制最大高度，避免超出视窗
   dialogBox.style.overflowY = 'auto'; // 内容超出时显示滚动条
   dialogBox.style.border = '1px solid rgba(0, 0, 0, 0.2)'; // 半透明边框
@@ -125,13 +127,17 @@ function initializeLive2D() {
 
   // 创建关闭按钮
   const closeButton = document.createElement('span');
-  closeButton.innerHTML = '&times;'; // 'X' 符号
+  // 显著放大关闭按钮SVG，使其视觉上更协调
+  closeButton.innerHTML = '<svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor"><path d="M5.293 5.293a1 1 0 0 1 1.414 0L8 6.586l1.293-1.293a1 1 0 1 1 1.414 1.414L9.414 8l1.293 1.293a1 1 0 0 1-1.414 1.414L8 9.414l-1.293 1.293a1 1 0 0 1-1.414-1.414L6.586 8 5.293 6.707a1 1 0 0 1 0-1.414z"/></svg>';
   closeButton.style.position = 'absolute';
   closeButton.style.bottom = '5px';
   closeButton.style.right = '8px';
   closeButton.style.cursor = 'pointer';
-  closeButton.style.fontSize = '16px';
-  closeButton.style.lineHeight = '1';
+  closeButton.style.display = 'flex';
+  closeButton.style.alignItems = 'center';
+  closeButton.style.justifyContent = 'center';
+  closeButton.style.width = '18px';
+  closeButton.style.height = '18px';
   closeButton.style.color = '#666';
   closeButton.style.transition = 'all 0.2s ease';
   closeButton.style.pointerEvents = 'auto'; // 关闭按钮需要能够接收鼠标事件
@@ -155,13 +161,17 @@ function initializeLive2D() {
    
   // 创建刷新按钮
   const refreshButton = document.createElement('span');
-  refreshButton.innerHTML = '&#x21bb;'; // 刷新符号
+  // 使用SVG图标以确保正确的纵横比和对齐
+  refreshButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>';
   refreshButton.style.position = 'absolute';
   refreshButton.style.bottom = '5px';
   refreshButton.style.right = '28px'; // 调整位置，使其在关闭按钮左侧
   refreshButton.style.cursor = 'pointer';
-  refreshButton.style.fontSize = '16px';
-  refreshButton.style.lineHeight = '1';
+  refreshButton.style.display = 'flex';
+  refreshButton.style.alignItems = 'center';
+  refreshButton.style.justifyContent = 'center';
+  refreshButton.style.width = '16px';
+  refreshButton.style.height = '16px';
   refreshButton.style.color = '#666';
   refreshButton.style.transition = 'all 0.2s ease';
   refreshButton.style.pointerEvents = 'auto';
@@ -183,6 +193,93 @@ function initializeLive2D() {
     refreshButton.style.transform = 'scale(1)';
   });
    
+  // 创建追问按钮
+  const askButton = document.createElement('span');
+  // 使用SVG图标以确保正确的纵横比和对齐
+  askButton.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M14 1a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4.414A2 2 0 0 0 3 11.586l-2 2V2a1 1 0 0 1 1-1h12zM2 0a2 2 0 0 0-2 2v12.793a.5.5 0 0 0 .854.353l2.853-2.853A1 1 0 0 1 4.414 12H14a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2z"/></svg>';
+  askButton.style.position = 'absolute';
+  askButton.style.bottom = '5px';
+  askButton.style.right = '48px'; // 调整位置，在刷新按钮左侧
+  askButton.style.cursor = 'pointer';
+  // 设置为flex容器以完美居中SVG
+  askButton.style.display = 'flex';
+  askButton.style.alignItems = 'center';
+  askButton.style.justifyContent = 'center';
+  askButton.style.width = '16px';
+  askButton.style.height = '16px';
+  askButton.style.color = '#666';
+  askButton.style.transition = 'all 0.2s ease';
+  askButton.style.pointerEvents = 'auto';
+
+  // 创建追问输入框
+  const askInput = document.createElement('input');
+  askInput.type = 'text';
+  askInput.placeholder = '对当前内容进行追问...';
+  askInput.style.position = 'absolute';
+  askInput.style.bottom = '30px';
+  askInput.style.left = '8px';
+  askInput.style.right = '8px';
+  askInput.style.width = 'calc(100% - 16px)';
+  askInput.style.border = 'none';
+  askInput.style.borderRadius = '12px';
+  askInput.style.padding = '8px';
+  askInput.style.background = 'rgba(255, 255, 255, 0.8)';
+  askInput.style.boxShadow = 'inset 0 1px 3px rgba(0, 0, 0, 0.1)';
+  askInput.style.outline = 'none';
+  askInput.style.color = '#333';
+  askInput.style.display = 'none'; // 默认隐藏
+  askInput.style.pointerEvents = 'auto';
+
+  dialogBox.appendChild(askInput);
+
+  // 添加追问按钮事件
+  askButton.addEventListener('click', (e) => {
+    e.stopPropagation();
+    askInput.style.display = askInput.style.display === 'none' ? 'block' : 'none';
+    if (askInput.style.display === 'block') {
+      askInput.focus();
+    }
+  });
+
+  // 添加追问输入框事件
+  askInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && askInput.value.trim() !== '') {
+      const question = askInput.value.trim();
+      askInput.value = '';
+      askInput.style.display = 'none';
+
+      // 将用户追问添加到历史记录
+      conversationHistory.push({ role: 'user', content: question });
+
+      dialogBox.firstChild.innerHTML = '正在思考中...';
+      // 发送包含历史记录的请求
+      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
+        if (response && response.summary) {
+          streamText(dialogBox, response.summary, 15, (fullText) => {
+            // 将AI的完整回答添加到历史记录
+            conversationHistory.push({ role: 'assistant', content: fullText });
+          });
+        } else {
+          streamText(dialogBox, '未能获取响应。');
+          // 如果请求失败，从历史记录中移除刚才的用户追问
+          conversationHistory.pop();
+        }
+      });
+    }
+  });
+
+  // 添加悬停效果
+  askButton.addEventListener('mouseenter', () => {
+    askButton.style.color = '#333';
+    askButton.style.transform = 'scale(1.1)';
+  });
+
+  askButton.addEventListener('mouseleave', () => {
+    askButton.style.color = '#666';
+    askButton.style.transform = 'scale(1)';
+  });
+
+  dialogBox.appendChild(askButton);
   dialogBox.appendChild(refreshButton);
   dialogBox.appendChild(closeButton);
   document.body.appendChild(dialogBox);
@@ -192,8 +289,12 @@ function initializeLive2D() {
     dialogOpacity: 0.6,
     dialogFontSize: 14,
     overallScale: 100,
-    dialogSelectable: false
+    dialogSelectable: false,
+    enableFollowUp: true
   }, (items) => {
+    if (!items.enableFollowUp) {
+      askButton.style.display = 'none';
+    }
     const scale = items.overallScale / 100;
     dialogBox.style.background = `rgba(255, 255, 255, ${items.dialogOpacity})`;
     dialogContent.style.fontSize = `${items.dialogFontSize}px`;
@@ -267,7 +368,7 @@ function initializeLive2D() {
   let streamTimer = null; // 用于控制流式输出的定时器
 
   // 流式显示函数（增强版）
-  function streamText(element, text, speed = 15) {
+  function streamText(element, text, speed = 15, callback) {
     // 清除之前的定时器
     if (streamTimer) {
       clearTimeout(streamTimer);
@@ -291,6 +392,9 @@ function initializeLive2D() {
         streamTimer = setTimeout(typeWriter, speed);
       } else {
         streamTimer = null; // 输出完成，清除定时器ID
+        if (callback) {
+          callback(text); // 调用回调函数，并传入完整的文本
+        }
       }
     }
     
@@ -303,20 +407,26 @@ function initializeLive2D() {
     // 立即显示"正在思考中"并保持可见
     contentElement.innerHTML = '飞速阅读中...';
     dialogBox.style.display = 'block';
+    conversationHistory = []; // 开始新的总结时，清空历史记录
 
     // 从页面获取文本内容
     // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
     setTimeout(() => {
       const pageText = document.body.innerText;
+      const userMessage = { role: 'user', content: pageText };
+      conversationHistory.push(userMessage);
 
       // 发送消息到background.js
-      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', text: pageText }, (response) => {
+      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
         if (response && response.summary) {
-          // 使用流式显示
-          streamText(dialogBox, response.summary);
+          // 使用流式显示，并在结束后更新历史记录
+          streamText(dialogBox, response.summary, 15, (fullText) => {
+            conversationHistory.push({ role: 'assistant', content: fullText });
+          });
         } else {
           // 如果没有收到有效的响应，也显示错误信息
           streamText(dialogBox, '未能获取响应。');
+          conversationHistory.pop(); // 移除失败的用户消息
         }
       });
     }, 500); // 500毫秒的延迟
@@ -382,17 +492,24 @@ function initializeLive2D() {
           const contentElement = dialogBox.firstChild;
           contentElement.innerHTML = '正在思考中...';
           dialogBox.style.display = 'block';
+          conversationHistory = []; // 开始新的划词提问时，清空历史记录
 
           const pageContext = document.body.innerText;
           const combinedText = askPromptTemplate
             .replace('{selection}', lastSelectedText)
             .replace('{context}', pageContext);
+          
+          const userMessage = { role: 'user', content: combinedText };
+          conversationHistory.push(userMessage);
 
-          chrome.runtime.sendMessage({ type: 'GET_SUMMARY', text: combinedText }, (response) => {
+          chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
             if (response && response.summary) {
-              streamText(dialogBox, response.summary);
+              streamText(dialogBox, response.summary, 15, (fullText) => {
+                conversationHistory.push({ role: 'assistant', content: fullText });
+              });
             } else {
               streamText(dialogBox, '未能获取响应。');
+              conversationHistory.pop();
             }
           });
         }
@@ -455,6 +572,12 @@ function initializeLive2D() {
         } else {
           dialogBox.style.display = 'none';
         }
+      }
+    } else if (request.type === "TOGGLE_FOLLOW_UP") {
+      console.log("收到切换追问输入框的命令");
+      // 模拟点击追问按钮
+      if (askButton.style.display !== 'none') {
+        askButton.click();
       }
     }
   });

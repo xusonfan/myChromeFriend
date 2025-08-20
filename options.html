@@ -1140,6 +1140,9 @@
         <div class="settings-panel" id="function-settings">
           <h2 class="panel-title">功能与行为</h2>
           <div class="form-group">
+            <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理快捷键</button>
+          </div>
+          <div class="form-group">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="auto-summarize" checked>
               <span class="checkbox-label">自动总结（取消勾选后只能通过快捷键触发总结）</span>
@@ -1162,7 +1165,10 @@
             </div>
           </div>
           <div class="form-group">
-            <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理快捷键</button>
+            <div class="checkbox-wrapper">
+              <input type="checkbox" id="enable-follow-up" checked>
+              <span class="checkbox-label">启用对话追问功能（在对话框中显示追问按钮）</span>
+            </div>
           </div>
         </div>
 
