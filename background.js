@@ -38,7 +38,14 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     speakingTabId = tabId; // 设置当前正在说话的标签页
     setupOffscreenDocument('offscreen.html', 'AUDIO_PLAYBACK').then(() => {
-      chrome.runtime.sendMessage({ type: 'PLAY_TTS', audioUrl: request.audioUrl, tabId: tabId });
+      chrome.storage.sync.get({ ttsVolume: 100 }, (items) => {
+        chrome.runtime.sendMessage({
+          type: 'PLAY_TTS',
+          audioUrl: request.audioUrl,
+          tabId: tabId,
+          volume: items.ttsVolume
+        });
+      });
     });
   } else if (request.type === 'TTS_PLAYBACK_FINISHED') {
     // Forward the message to the content script in the correct tab

@@ -178,6 +178,7 @@ function saveOptions() {
   const ttsVoice = document.getElementById('tts-voice').value;
   const ttsRate = document.getElementById('tts-rate').value;
   const ttsPitch = document.getElementById('tts-pitch').value;
+  const ttsVolume = document.getElementById('tts-volume').value;
   const ttsBackgroundPlay = document.getElementById('tts-background-play').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
@@ -207,6 +208,7 @@ function saveOptions() {
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
     ttsPitch: 0,
+    ttsVolume: 100,
     ttsBackgroundPlay: false
   }, (oldSettings) => {
     // 检查设置是否有变化
@@ -236,6 +238,7 @@ function saveOptions() {
       ttsVoice: ttsVoice,
       ttsRate: parseInt(ttsRate, 10),
       ttsPitch: parseInt(ttsPitch, 10),
+      ttsVolume: parseInt(ttsVolume, 10),
       ttsBackgroundPlay: ttsBackgroundPlay
     };
 
@@ -265,6 +268,7 @@ function saveOptions() {
       oldSettings.ttsVoice !== newSettings.ttsVoice ||
       oldSettings.ttsRate !== newSettings.ttsRate ||
       oldSettings.ttsPitch !== newSettings.ttsPitch ||
+      oldSettings.ttsVolume !== newSettings.ttsVolume ||
       oldSettings.ttsBackgroundPlay !== newSettings.ttsBackgroundPlay;
 
     chrome.storage.sync.set(newSettings, () => {
@@ -323,6 +327,7 @@ function restoreOptions() {
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
     ttsPitch: 0,
+    ttsVolume: 100,
     ttsBackgroundPlay: false
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
@@ -352,6 +357,8 @@ function restoreOptions() {
     document.getElementById('tts-rate-value').textContent = `${items.ttsRate}%`;
     document.getElementById('tts-pitch').value = items.ttsPitch;
     document.getElementById('tts-pitch-value').textContent = `${items.ttsPitch}%`;
+    document.getElementById('tts-volume').value = items.ttsVolume;
+    document.getElementById('tts-volume-value').textContent = `${items.ttsVolume}%`;
     document.getElementById('tts-background-play').checked = items.ttsBackgroundPlay;
 
 
@@ -567,6 +574,10 @@ document.getElementById('tts-pitch').addEventListener('input', (event) => {
   document.getElementById('tts-pitch-value').textContent = `${event.target.value}%`;
 });
 
+document.getElementById('tts-volume').addEventListener('input', (event) => {
+  document.getElementById('tts-volume-value').textContent = `${event.target.value}%`;
+});
+
 document.getElementById('test-tts-button').addEventListener('click', testTTS);
 
 document.getElementById('reset-tts-button').addEventListener('click', () => {
@@ -574,6 +585,8 @@ document.getElementById('reset-tts-button').addEventListener('click', () => {
   document.getElementById('tts-rate-value').textContent = '0%';
   document.getElementById('tts-pitch').value = 0;
   document.getElementById('tts-pitch-value').textContent = '0%';
+  document.getElementById('tts-volume').value = 100;
+  document.getElementById('tts-volume-value').textContent = '100%';
 });
 
 // 添加一个事件监听器来打开快捷键设置页面
@@ -581,17 +594,27 @@ document.getElementById('manage-shortcuts').addEventListener('click', () => {
   chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
 });
 
-// 测试TTS发音
+// 测试TTS发音 - 使用 Web Audio API
+const testAudioContext = new (window.AudioContext || window.webkitAudioContext)();
+let testAudioSource = null;
+
 async function testTTS() {
   const ttsApiEndpoint = document.getElementById('tts-api-endpoint').value;
   const ttsVoice = document.getElementById('tts-voice').value;
   const ttsRate = document.getElementById('tts-rate').value;
   const ttsPitch = document.getElementById('tts-pitch').value;
+  const ttsVolume = document.getElementById('tts-volume').value;
   const testButton = document.getElementById('test-tts-button');
 
   if (!ttsVoice) {
     alert('请先选择一个声音。');
     return;
+  }
+
+  if (testAudioSource) {
+    try {
+      testAudioSource.stop();
+    } catch (e) {}
   }
 
   const originalButtonText = testButton.textContent;
@@ -601,14 +624,12 @@ async function testTTS() {
   try {
     const response = await fetch(ttsApiEndpoint, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         text: '你好，这是一个测试声音。',
         voice: ttsVoice,
-        rate: ttsRate / 100, // API需要-1.0到1.0之间的值
-        pitch: ttsPitch / 100, // API需要-1.0到1.0之间的值
+        rate: ttsRate / 100,
+        pitch: ttsPitch / 100,
         preview: true
       }),
     });
@@ -617,16 +638,24 @@ async function testTTS() {
       throw new Error(`TTS API 请求失败: ${response.statusText}`);
     }
 
-    const audioBlob = await response.blob();
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    audio.play();
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await testAudioContext.decodeAudioData(arrayBuffer);
 
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
+    const gainNode = testAudioContext.createGain();
+    gainNode.gain.value = ttsVolume / 100;
+    gainNode.connect(testAudioContext.destination);
+
+    testAudioSource = testAudioContext.createBufferSource();
+    testAudioSource.buffer = audioBuffer;
+    testAudioSource.connect(gainNode);
+    
+    testAudioSource.onended = () => {
       testButton.textContent = originalButtonText;
       testButton.disabled = false;
+      testAudioSource = null;
     };
+
+    testAudioSource.start(0);
 
   } catch (error) {
     console.error('TTS 测试失败:', error);
