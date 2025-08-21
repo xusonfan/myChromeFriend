@@ -299,7 +299,6 @@ function initializeLive2D() {
 
   // 添加追问按钮事件
   askButton.addEventListener('click', (e) => {
-    stopTTS(); // 用户追问时停止TTS
     e.stopPropagation();
     askInput.style.display = askInput.style.display === 'none' ? 'block' : 'none';
     if (askInput.style.display === 'block') {
