@@ -215,3 +215,62 @@ chrome.action.onClicked.addListener((tab) => {
     }
   });
 });
+
+// 创建右键菜单项
+chrome.runtime.onInstalled.addListener(() => {
+  chrome.contextMenus.create({
+    id: "add-to-blacklist",
+    title: "将当前域名加入黑名单",
+    contexts: ["action"]
+  });
+});
+
+// 监听右键菜单点击事件
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+  if (info.menuItemId === "add-to-blacklist") {
+    if (tab.url) {
+      try {
+        const url = new URL(tab.url);
+        const domain = url.hostname;
+
+        // 从存储中获取现有黑名单
+        chrome.storage.sync.get({ blacklist: '' }, (data) => {
+          let blacklist = data.blacklist.split('\n').filter(Boolean); // 转换为数组并移除空行
+          
+          // 如果域名不存在于黑名单中，则添加
+          if (!blacklist.includes(domain)) {
+            blacklist.push(domain);
+            
+            // 保存更新后的黑名单
+            chrome.storage.sync.set({ blacklist: blacklist.join('\n') }, () => {
+              console.log(`域名 ${domain} 已成功添加到黑名单。`);
+              // 可选：发送通知提醒用户
+              chrome.notifications.create({
+                type: 'basic',
+                iconUrl: 'images/icon48.png',
+                title: '操作成功',
+                message: `域名 ${domain} 已被加入黑名单。`
+              });
+            });
+          } else {
+            console.log(`域名 ${domain} 已存在于黑名单中。`);
+            chrome.notifications.create({
+              type: 'basic',
+              iconUrl: 'images/icon48.png',
+              title: '操作提醒',
+              message: `域名 ${domain} 已存在于黑名单中，无需重复添加。`
+            });
+          }
+        });
+      } catch (e) {
+        console.error("无法解析URL或处理黑名单:", e);
+        chrome.notifications.create({
+          type: 'basic',
+          iconUrl: 'images/icon48.png',
+          title: '操作失败',
+          message: `无法从 ${tab.url} 中提取域名。`
+        });
+      }
+    }
+  }
+});
