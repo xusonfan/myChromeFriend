@@ -451,6 +451,25 @@
       margin-bottom: 1rem;
     }
     
+    /* 新增：功能设置项容器 */
+    .setting-item {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border: 2px solid var(--border-color);
+      transition: var(--transition);
+    }
+
+    .setting-item:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 移除 setting-item 内最后一个元素的下边距 */
+    .setting-item > *:last-child {
+      margin-bottom: 0;
+    }
+    
     /* 标签样式 - 紧凑型 */
     .form-group label {
       font-size: 0.9rem;
@@ -624,19 +643,17 @@
     .checkbox-wrapper {
       display: flex;
       align-items: center;
-      padding: 1rem;
-      background: linear-gradient(135deg, var(--card-bg), #fff);
+      padding: 0.5rem;
+      background: transparent;
       border-radius: 12px;
-      border: 2px solid var(--border-color);
+      border: 2px solid transparent;
       transition: var(--transition);
       cursor: pointer;
+      margin-bottom: 0.5rem;
     }
 
     .checkbox-wrapper:hover {
-      border-color: var(--primary-color);
-      background: linear-gradient(135deg, #fff, #fff0f5);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
+      background: rgba(255, 255, 255, 0.5);
     }
 
     .checkbox-wrapper input[type="checkbox"] {
@@ -774,10 +791,11 @@
     .sub-group {
       margin-top: 1rem;
       padding-left: 2rem;
-      border-left: 3px solid var(--primary-color);
-      background: rgba(255, 107, 157, 0.05);
+      border-left: 3px solid var(--primary-light);
+      background: transparent;
       border-radius: 0 12px 12px 0;
-      padding: 1rem 1rem 1rem 2rem;
+      padding: 1rem 0 0.5rem 1.5rem;
+      margin-top: 0.5rem;
     }
 
     /* 标签组 */
@@ -1139,22 +1157,22 @@
         <!-- 功能与行为面板 -->
         <div class="settings-panel" id="function-settings">
           <h2 class="panel-title">功能与行为</h2>
-          <div class="form-group">
+          <div class="setting-item">
             <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理快捷键</button>
           </div>
-          <div class="form-group">
+          <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="auto-summarize" checked>
               <span class="checkbox-label">自动总结（取消勾选后只能通过快捷键触发总结）</span>
             </div>
           </div>
-          <div class="form-group">
+          <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="dialog-selectable">
               <span class="checkbox-label">禁用鼠标穿透对话框（允许选中对话框和滚动）</span>
             </div>
           </div>
-          <div class="form-group">
+          <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="enable-floating-button" checked>
               <span class="checkbox-label">启用划词提问</span>
@@ -1164,13 +1182,13 @@
               <textarea id="ask-prompt" placeholder="例如: 请基于网页内容，以动漫少女的口吻解释这段文本..."></textarea>
             </div>
           </div>
-          <div class="form-group">
+          <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="enable-follow-up" checked>
               <span class="checkbox-label">启用对话追问功能（在对话框中显示追问按钮）</span>
             </div>
           </div>
-          <div class="form-group">
+          <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="enable-cache" checked>
               <span class="checkbox-label">启用内容缓存（减少相同页面的重复请求）</span>
