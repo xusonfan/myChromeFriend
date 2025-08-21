@@ -27,6 +27,9 @@
     },
     "toggle_tts": {
       "description": "播放或停止TTS语音"
+    },
+    "boss_key": {
+      "description": "一键隐藏/显示所有tab里的内容（老板键）"
     }
   },
   "background": {

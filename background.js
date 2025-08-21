@@ -1,6 +1,7 @@
 const fetchControllers = {};
 let creating; // A global promise to avoid concurrency issues
 let speakingTabId = null; // To track which tab is currently playing TTS
+let isBossKeyActive = false; // 全局老板键状态
 
 // Function to setup and manage the offscreen document
 async function setupOffscreenDocument(path, reason) {
@@ -246,6 +247,15 @@ chrome.commands.onCommand.addListener((command) => {
       } else if (command === "toggle_tts") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_TTS' 消息`);
         chrome.tabs.sendMessage(tabId, { type: "TOGGLE_TTS" });
+      } else if (command === "boss_key") {
+        isBossKeyActive = !isBossKeyActive; // 切换全局状态
+        console.log(`老板键状态切换为: ${isBossKeyActive}`);
+        // 向所有标签页广播消息
+        chrome.tabs.query({}, (tabs) => {
+          tabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, { type: "BOSS_KEY", isHidden: isBossKeyActive });
+          });
+        });
       }
     } else {
       console.log("没有找到活动的标签页。");

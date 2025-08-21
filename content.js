@@ -938,6 +938,18 @@ function initializeLive2D() {
           fetchNextAudio();
         }
       }
+    } else if (request.type === "BOSS_KEY") {
+      console.log(`收到老板键命令，状态: ${request.isHidden}`);
+      const live2dWidget = document.getElementById('live2d-widget');
+      const dialogWrapper = document.getElementById('dialog-wrapper');
+      if (live2dWidget && dialogWrapper) {
+        const displayStyle = request.isHidden ? 'none' : 'block';
+        live2dWidget.style.display = displayStyle;
+        dialogWrapper.style.display = displayStyle;
+        if (request.isHidden) {
+          stopTTS(); // 隐藏时停止TTS
+        }
+      }
     }
   });
 }
