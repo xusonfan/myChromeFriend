@@ -1087,6 +1087,12 @@
           </svg>
           <span class="nav-text">TTS 设置</span>
         </div>
+        <div class="nav-item" data-panel="shortcut-settings">
+          <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M18 7H2a1 1 0 00-1 1v4a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1zM2 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zm4 3a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zm3 0a1 1 0 11-2 0 1 1 0 012 0zM7 11a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd" />
+          </svg>
+          <span class="nav-text">快捷键设置</span>
+        </div>
       </div>
 
       <!-- 右侧内容区域 -->
@@ -1164,9 +1170,6 @@
         <!-- 功能与行为面板 -->
         <div class="settings-panel" id="function-settings">
           <h2 class="panel-title">功能与行为</h2>
-          <div class="setting-item">
-            <button id="manage-shortcuts" class="btn btn-secondary btn-block">管理快捷键</button>
-          </div>
           <div class="setting-item">
             <div class="checkbox-wrapper">
               <input type="checkbox" id="auto-summarize" checked>
@@ -1282,6 +1285,20 @@
                 TTS 功能特别感谢 <a href="https://github.com/LibreSpark/LibreTTS" target="_blank">LibreTTS</a> 项目
               </p>
             </div>
+          </div>
+        </div>
+
+        <!-- 快捷键设置面板 -->
+        <div class="settings-panel" id="shortcut-settings">
+          <h2 class="panel-title">快捷键设置</h2>
+          <div class="setting-item">
+            <p class="form-hint" style="font-size: 0.9rem; margin-bottom: 1rem;">
+              您可以在此查看当前已配置的快捷键。由于浏览器安全限制，请点击下方按钮跳转至扩展程序快捷键页面进行修改。
+            </p>
+            <div id="shortcuts-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+              <!-- 快捷键列表将由 JS 动态填充 -->
+            </div>
+            <button id="manage-shortcuts" class="btn btn-secondary btn-block" style="margin-top: 1.5rem;">管理快捷键</button>
           </div>
         </div>
       </div>

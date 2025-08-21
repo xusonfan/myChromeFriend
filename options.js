@@ -537,11 +537,70 @@ function setupNavigation() {
     });
   });
 }
+// 新增：显示快捷键列表
+function displayShortcuts() {
+  const shortcutsList = document.getElementById('shortcuts-list');
+  if (!shortcutsList) return;
+
+  chrome.commands.getAll((commands) => {
+    shortcutsList.innerHTML = ''; // 清空现有内容
+
+    if (commands && commands.length > 0) {
+      commands.forEach(command => {
+        // 忽略那些没有描述的内部命令
+        if (!command.description) {
+          return;
+        }
+
+        const shortcutItem = document.createElement('div');
+        shortcutItem.style.display = 'flex';
+        shortcutItem.style.justifyContent = 'space-between';
+        shortcutItem.style.alignItems = 'center';
+        shortcutItem.style.padding = '0.75rem 0';
+        
+        // 为了美观，给除了最后一个之外的元素添加下边框
+        shortcutItem.style.borderBottom = '2px solid var(--border-color)';
+
+
+        const descriptionSpan = document.createElement('span');
+        descriptionSpan.textContent = command.description;
+        descriptionSpan.style.fontWeight = '500';
+        descriptionSpan.style.color = 'var(--text-primary)';
+        descriptionSpan.style.fontSize = '0.95rem';
+
+        const shortcutSpan = document.createElement('span');
+        shortcutSpan.textContent = command.shortcut || '未设置';
+        shortcutSpan.style.background = 'var(--card-bg)';
+        shortcutSpan.style.padding = '0.3rem 0.8rem';
+        shortcutSpan.style.borderRadius = '10px';
+        shortcutSpan.style.fontFamily = 'monospace, sans-serif';
+        shortcutSpan.style.color = 'var(--primary-color)';
+        shortcutSpan.style.fontWeight = '600';
+        shortcutSpan.style.border = '2px solid var(--primary-light)';
+        shortcutSpan.style.boxShadow = 'var(--shadow-sm)';
+
+        shortcutItem.appendChild(descriptionSpan);
+        shortcutItem.appendChild(shortcutSpan);
+        shortcutsList.appendChild(shortcutItem);
+      });
+      
+      // 移除最后一个元素的下边框
+      if (shortcutsList.lastChild) {
+        shortcutsList.lastChild.style.borderBottom = 'none';
+      }
+
+    } else {
+      shortcutsList.innerHTML = '<p class="form-hint">没有找到可配置的快捷键。</p>';
+    }
+  });
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   restoreOptions();
   setupApiSettingsToggle();
   setupNavigation(); // 添加导航功能
+  displayShortcuts(); // 显示快捷键
+
   // 确保在restoreOptions完成后再添加事件监听器
   setTimeout(() => {
     document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
