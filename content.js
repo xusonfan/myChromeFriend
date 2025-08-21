@@ -919,6 +919,20 @@ function initializeLive2D() {
       if (askButton.style.display !== 'none') {
         askButton.click();
       }
+    } else if (request.type === "TOGGLE_TTS") {
+      console.log("收到切换TTS播放状态的命令");
+      if (isSpeaking) {
+        stopTTS();
+      } else {
+        // 如果没有在说话，则开始朗读当前对话框的全部内容
+        const fullText = dialogContent.innerText;
+        if (fullText && ttsSettings.enableTTS) {
+          const cleanedText = cleanTextForTTS(fullText);
+          const paragraphs = cleanedText.split('\n').filter(p => p.trim() !== '');
+          paragraphs.forEach(p => ttsQueue.push(p));
+          fetchNextAudio();
+        }
+      }
     }
   });
 }

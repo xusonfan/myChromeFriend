@@ -24,6 +24,9 @@
     },
     "toggle_follow_up": {
       "description": "展开追问输入框"
+    },
+    "toggle_tts": {
+      "description": "播放或停止TTS语音"
     }
   },
   "background": {

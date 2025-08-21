@@ -236,6 +236,9 @@ chrome.commands.onCommand.addListener((command) => {
       } else if (command === "toggle_follow_up") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_FOLLOW_UP' 消息`);
         chrome.tabs.sendMessage(tabId, { type: "TOGGLE_FOLLOW_UP" });
+      } else if (command === "toggle_tts") {
+        console.log(`向标签页 ${tabId} 发送 'TOGGLE_TTS' 消息`);
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_TTS" });
       }
     } else {
       console.log("没有找到活动的标签页。");
