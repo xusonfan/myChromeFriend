@@ -25,7 +25,10 @@ jobs:
       - name: Package Extension
         id: package_extension
         run: |
-          zip -r my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip . -x ".git/*" ".github/*"
+          # 在打包前，临时从 README.md 中移除引用截图的行
+          sed -i '/screenshot\/image\.png/d' README.md
+          
+          zip -r my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip . -x ".git/*" ".github/*" "screenshot/*"
           echo "zip_path=my-chrome-friend-${{ steps.get_version.outputs.VERSION }}.zip" >> $GITHUB_OUTPUT
 
       - name: Generate Changelog

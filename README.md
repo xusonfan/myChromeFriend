@@ -1,7 +1,7 @@
 # 我的上网伙伴 (My Chrome Friend)
 
 这是一个功能强大的Chrome浏览器扩展，它将一个可爱的Live2D看板娘带到您的浏览器中，并集成了AI大语言模型，让她成为您在网上冲浪时的智能伙伴。
-
+![alt text](screenshot/image.png)![alt text](screenshot/image-1.png)![alt text](screenshot/image-2.png)
 ## ✨ 主要功能
 
 *   **AI网页总结**：在您浏览任何网页时，看板娘会自动阅读页面内容，并以可爱的动漫少女口吻为您提供一个简洁、有趣的总结。
