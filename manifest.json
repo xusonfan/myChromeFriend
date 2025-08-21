@@ -1,16 +1,17 @@
 {
   "manifest_version": 3,
   "name": "我的上网伙伴",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "一个可爱的动漫少女，陪伴你的网上冲浪。",
   "permissions": [
-    "activeTab",
-    "scripting",
-    "storage",
-    "tabs",
-    "contextMenus",
-    "notifications"
-  ],
+  "activeTab",
+  "scripting",
+  "storage",
+  "tabs",
+  "contextMenus",
+  "notifications",
+  "offscreen"
+],
   "commands": {
     "refresh_summary": {
       "description": "刷新总结内容"
@@ -52,7 +53,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["images/character.png", "hijack.js", "lib/L2Dwidget.min.js", "lib/L2Dwidget.0.min.js", "init-live2d.js", "live2d_models/*/*", "live2d_models/*/*/*", "live2d_models/*/*/*/*"],
+      "resources": ["speakers.json", "images/character.png", "hijack.js", "lib/L2Dwidget.min.js", "lib/L2Dwidget.0.min.js", "init-live2d.js", "live2d_models/*/*", "live2d_models/*/*/*", "live2d_models/*/*/*/*"],
       "matches": ["<all_urls>"]
     }
   ]

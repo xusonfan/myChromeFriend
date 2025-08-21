@@ -172,6 +172,12 @@ function saveOptions() {
   const dialogSelectable = document.getElementById('dialog-selectable').checked;
   const enableCache = document.getElementById('enable-cache').checked;
   const cacheDuration = document.getElementById('cache-duration').value;
+  const enableTTS = document.getElementById('enable-tts').checked;
+  const ttsApiEndpoint = document.getElementById('tts-api-endpoint').value;
+  const ttsRetryCount = document.getElementById('tts-retry-count').value;
+  const ttsVoice = document.getElementById('tts-voice').value;
+  const ttsRate = document.getElementById('tts-rate').value;
+  const ttsPitch = document.getElementById('tts-pitch').value;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -193,7 +199,13 @@ function saveOptions() {
     autoSummarize: true,
     dialogSelectable: false,
     enableCache: true,
-    cacheDuration: 5
+    cacheDuration: 5,
+    enableTTS: false,
+    ttsApiEndpoint: 'https://libretts.is-an.org/api/tts',
+    ttsRetryCount: 2,
+    ttsVoice: 'zh-CN-XiaoxiaoNeural',
+    ttsRate: 0,
+    ttsPitch: 0
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -215,7 +227,13 @@ function saveOptions() {
       autoSummarize: autoSummarize,
       dialogSelectable: dialogSelectable,
       enableCache: enableCache,
-      cacheDuration: parseInt(cacheDuration, 10) || 5
+      cacheDuration: parseInt(cacheDuration, 10) || 5,
+      enableTTS: enableTTS,
+      ttsApiEndpoint: ttsApiEndpoint,
+      ttsRetryCount: parseInt(ttsRetryCount, 10) || 0,
+      ttsVoice: ttsVoice,
+      ttsRate: parseInt(ttsRate, 10),
+      ttsPitch: parseInt(ttsPitch, 10)
     };
 
     const hasChanges =
@@ -237,7 +255,13 @@ function saveOptions() {
       oldSettings.autoSummarize !== newSettings.autoSummarize ||
       oldSettings.dialogSelectable !== newSettings.dialogSelectable ||
       oldSettings.enableCache !== newSettings.enableCache ||
-      oldSettings.cacheDuration !== newSettings.cacheDuration;
+      oldSettings.cacheDuration !== newSettings.cacheDuration ||
+      oldSettings.enableTTS !== newSettings.enableTTS ||
+      oldSettings.ttsApiEndpoint !== newSettings.ttsApiEndpoint ||
+      oldSettings.ttsRetryCount !== newSettings.ttsRetryCount ||
+      oldSettings.ttsVoice !== newSettings.ttsVoice ||
+      oldSettings.ttsRate !== newSettings.ttsRate ||
+      oldSettings.ttsPitch !== newSettings.ttsPitch;
 
     chrome.storage.sync.set(newSettings, () => {
       const saveButtonText = document.getElementById('save-button-text');
@@ -288,7 +312,13 @@ function restoreOptions() {
     autoSummarize: true, // 默认启用自动总结
     dialogSelectable: false,
     enableCache: true,
-    cacheDuration: 5
+    cacheDuration: 5,
+    enableTTS: false,
+    ttsApiEndpoint: 'https://libretts.is-an.org/api/tts',
+    ttsRetryCount: 2,
+    ttsVoice: 'zh-CN-XiaoxiaoNeural',
+    ttsRate: 0,
+    ttsPitch: 0
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -310,11 +340,20 @@ function restoreOptions() {
     document.getElementById('dialog-selectable').checked = items.dialogSelectable;
     document.getElementById('enable-cache').checked = items.enableCache;
     document.getElementById('cache-duration').value = items.cacheDuration;
+    document.getElementById('enable-tts').checked = items.enableTTS;
+    document.getElementById('tts-api-endpoint').value = items.ttsApiEndpoint;
+    document.getElementById('tts-retry-count').value = items.ttsRetryCount;
+    document.getElementById('tts-rate').value = items.ttsRate;
+    document.getElementById('tts-rate-value').textContent = `${items.ttsRate}%`;
+    document.getElementById('tts-pitch').value = items.ttsPitch;
+    document.getElementById('tts-pitch-value').textContent = `${items.ttsPitch}%`;
 
 
     // 初始化UI状态
     updateAskPromptUI();
     updateCacheDurationUI();
+    updateTTSOptionsUI();
+    fetchTTSVoices(items.ttsVoice);
 
     // 移除API设置的自动隐藏功能，现在API设置始终可见
 
@@ -374,7 +413,6 @@ function updateCacheDurationUI() {
     cacheDurationInput.disabled = true;
   }
 }
-
 // 设置API设置区域的折叠/展开功能
 function setupApiSettingsToggle() {
   const apiSettingsToggle = document.getElementById('api-settings-toggle');
@@ -387,6 +425,74 @@ function setupApiSettingsToggle() {
       apiSettingsContainer.style.display = isVisible ? 'none' : 'block';
       apiSettingsToggle.textContent = isVisible ? 'API 设置 ▸' : 'API 设置 ▾';
     });
+  }
+}
+
+// 获取TTS声音列表
+async function fetchTTSVoices(savedVoice) {
+  const voiceSelect = document.getElementById('tts-voice');
+  try {
+    // 同时获取API的声音列表和本地的翻译文件
+    const [voiceResponse, speakersResponse] = await Promise.all([
+      fetch('https://libretts.is-an.org/api/voices'),
+      fetch(chrome.runtime.getURL('speakers.json'))
+    ]);
+
+    const voices = await voiceResponse.json();
+    const speakersData = await speakersResponse.json();
+    const speakerMappings = speakersData['edge-api'].speakers;
+
+    voiceSelect.innerHTML = ''; // 清空现有选项
+
+    // 根据语言进行分组
+    const groupedVoices = voices.reduce((acc, voice) => {
+      const lang = voice.Locale.split('-'); // 使用语言代码作为分组依据
+      if (!acc[lang]) {
+        acc[lang] = [];
+      }
+      acc[lang].push(voice);
+      return acc;
+    }, {});
+
+    // 排序并创建选项组
+    Object.keys(groupedVoices).sort().forEach(lang => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = lang.toUpperCase();
+      
+      groupedVoices[lang].forEach(voice => {
+        const option = document.createElement('option');
+        option.value = voice.ShortName;
+        // 使用speakers.json中的翻译，如果找不到则回退到API的DisplayName
+        const translatedName = speakerMappings[voice.ShortName] || voice.DisplayName;
+        option.textContent = `${translatedName} (${voice.Gender})`;
+        optgroup.appendChild(option);
+      });
+      
+      voiceSelect.appendChild(optgroup);
+    });
+
+    if (savedVoice) {
+      voiceSelect.value = savedVoice;
+    }
+
+  } catch (error) {
+    console.error('获取TTS声音列表失败:', error);
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '加载声音列表失败';
+    voiceSelect.appendChild(option);
+  }
+}
+
+// 更新TTS选项的UI
+function updateTTSOptionsUI() {
+  const enableTTS = document.getElementById('enable-tts').checked;
+  const ttsOptionsGroup = document.getElementById('tts-options-group');
+
+  if (enableTTS) {
+    ttsOptionsGroup.style.display = 'block';
+  } else {
+    ttsOptionsGroup.style.display = 'none';
   }
 }
 
@@ -421,6 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setTimeout(() => {
     document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
     document.getElementById('enable-cache').addEventListener('change', updateCacheDurationUI);
+    document.getElementById('enable-tts').addEventListener('change', updateTTSOptionsUI);
   }, 100);
 
   // 获取并显示版本号
@@ -446,7 +553,79 @@ document.getElementById('overall-scale').addEventListener('input', (event) => {
   document.getElementById('overall-scale-value').textContent = event.target.value;
 });
 
+document.getElementById('tts-rate').addEventListener('input', (event) => {
+  document.getElementById('tts-rate-value').textContent = `${event.target.value}%`;
+});
+
+document.getElementById('tts-pitch').addEventListener('input', (event) => {
+  document.getElementById('tts-pitch-value').textContent = `${event.target.value}%`;
+});
+
+document.getElementById('test-tts-button').addEventListener('click', testTTS);
+
+document.getElementById('reset-tts-button').addEventListener('click', () => {
+  document.getElementById('tts-rate').value = 0;
+  document.getElementById('tts-rate-value').textContent = '0%';
+  document.getElementById('tts-pitch').value = 0;
+  document.getElementById('tts-pitch-value').textContent = '0%';
+});
+
 // 添加一个事件监听器来打开快捷键设置页面
 document.getElementById('manage-shortcuts').addEventListener('click', () => {
   chrome.tabs.create({ url: 'chrome://extensions/shortcuts' });
 });
+
+// 测试TTS发音
+async function testTTS() {
+  const ttsApiEndpoint = document.getElementById('tts-api-endpoint').value;
+  const ttsVoice = document.getElementById('tts-voice').value;
+  const ttsRate = document.getElementById('tts-rate').value;
+  const ttsPitch = document.getElementById('tts-pitch').value;
+  const testButton = document.getElementById('test-tts-button');
+
+  if (!ttsVoice) {
+    alert('请先选择一个声音。');
+    return;
+  }
+
+  const originalButtonText = testButton.textContent;
+  testButton.textContent = '正在生成...';
+  testButton.disabled = true;
+
+  try {
+    const response = await fetch(ttsApiEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        text: '你好，这是一个测试声音。',
+        voice: ttsVoice,
+        rate: ttsRate / 100, // API需要-1.0到1.0之间的值
+        pitch: ttsPitch / 100, // API需要-1.0到1.0之间的值
+        preview: true
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`TTS API 请求失败: ${response.statusText}`);
+    }
+
+    const audioBlob = await response.blob();
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    audio.play();
+
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      testButton.textContent = originalButtonText;
+      testButton.disabled = false;
+    };
+
+  } catch (error) {
+    console.error('TTS 测试失败:', error);
+    alert('TTS 测试失败，请检查API端点和网络连接。');
+    testButton.textContent = originalButtonText;
+    testButton.disabled = false;
+  }
+}

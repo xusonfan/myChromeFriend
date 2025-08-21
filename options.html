@@ -1080,6 +1080,13 @@
           </svg>
           <span class="nav-text">内容控制</span>
         </div>
+        <div class="nav-item" data-panel="tts-settings">
+          <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"></path>
+            <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"></path>
+          </svg>
+          <span class="nav-text">TTS 设置</span>
+        </div>
       </div>
 
       <!-- 右侧内容区域 -->
@@ -1206,6 +1213,56 @@
           <div class="form-group">
             <label for="blacklist">网址黑名单 (每行一个，支持域名匹配，同域名下全部禁用)</label>
             <textarea id="blacklist" placeholder="例如: https://www.google.com"></textarea>
+          </div>
+        </div>
+
+        <!-- TTS 设置面板 -->
+        <div class="settings-panel" id="tts-settings">
+          <h2 class="panel-title">TTS 设置</h2>
+          <div class="setting-item">
+            <div class="checkbox-wrapper">
+              <input type="checkbox" id="enable-tts">
+              <span class="checkbox-label">启用 TTS 语音朗读</span>
+            </div>
+          </div>
+          <div id="tts-options-group">
+            <div class="form-group">
+              <label for="tts-api-endpoint">TTS API 接口</label>
+              <input type="text" id="tts-api-endpoint" placeholder="https://libretts.is-an.org/api/tts">
+            </div>
+            <div class="form-group">
+              <label for="tts-retry-count">TTS 请求失败重试次数</label>
+              <input type="number" id="tts-retry-count" placeholder="例如: 2" min="0">
+            </div>
+            <div class="form-group">
+              <label for="tts-voice">选择声音</label>
+              <select id="tts-voice">
+                <!-- Voices will be populated by JS -->
+              </select>
+            </div>
+            <div class="form-group">
+              <div class="range-label">
+                <label for="tts-rate">语速</label>
+                <span class="range-value" id="tts-rate-value">0%</span>
+              </div>
+              <input type="range" id="tts-rate" min="-100" max="100" step="1" value="0">
+            </div>
+            <div class="form-group">
+              <div class="range-label">
+                <label for="tts-pitch">语调</label>
+                <span class="range-value" id="tts-pitch-value">0%</span>
+              </div>
+              <input type="range" id="tts-pitch" min="-100" max="100" step="1" value="0">
+            </div>
+            <div class="form-group">
+              <button id="test-tts-button" class="btn btn-secondary">测试声音</button>
+              <button id="reset-tts-button" class="btn btn-secondary" style="margin-left: 10px;">重置语速语调</button>
+            </div>
+            <div class="form-group" style="margin-top: 1rem; text-align: right;">
+              <p style="font-size: 0.8rem; color: var(--text-secondary);">
+                TTS 功能特别感谢 <a href="https://github.com/LibreSpark/LibreTTS" target="_blank">LibreTTS</a> 项目
+              </p>
+            </div>
           </div>
         </div>
       </div>

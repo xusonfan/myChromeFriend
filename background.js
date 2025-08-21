@@ -1,8 +1,49 @@
 const fetchControllers = {};
+let creating; // A global promise to avoid concurrency issues
+let speakingTabId = null; // To track which tab is currently playing TTS
+
+// Function to setup and manage the offscreen document
+async function setupOffscreenDocument(path, reason) {
+    // Check if we have an existing offscreen document
+    const existingContexts = await chrome.runtime.getContexts({
+        contextTypes: ['OFFSCREEN_DOCUMENT']
+    });
+    if (existingContexts.find(c => c.documentUrl.endsWith(path))) {
+        return;
+    }
+
+    // Avoid creating multiple offscreen documents simultaneously
+    if (creating) {
+        await creating;
+    } else {
+        creating = chrome.offscreen.createDocument({
+            url: path,
+            reasons: [reason],
+            justification: 'Needed for audio playback',
+        });
+        await creating;
+        creating = null;
+    }
+}
 
 // 监听来自content.js的消息
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'GET_SUMMARY') {
+  if (request.type === 'PLAY_TTS_REQUEST') {
+    const tabId = sender.tab.id;
+    speakingTabId = tabId; // Set the currently speaking tab
+    setupOffscreenDocument('offscreen.html', 'AUDIO_PLAYBACK').then(() => {
+      chrome.runtime.sendMessage({ type: 'PLAY_TTS', audioUrl: request.audioUrl, tabId: tabId });
+    });
+  } else if (request.type === 'TTS_PLAYBACK_FINISHED') {
+    // Forward the message to the content script in the correct tab
+    if (sender.url.includes('offscreen.html') && request.tabId) {
+        chrome.tabs.sendMessage(request.tabId, { type: 'TTS_PLAYBACK_FINISHED' });
+    }
+  } else if (request.type === 'STOP_TTS') {
+    // Forward the stop message to the offscreen document and clear state
+    speakingTabId = null;
+    chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+  } else if (request.type === 'GET_SUMMARY') {
     const tabId = sender.tab.id;
 
     // 如果该标签页有正在进行的请求，先中止它
@@ -223,6 +264,27 @@ chrome.runtime.onInstalled.addListener(() => {
     title: "将当前域名加入黑名单",
     contexts: ["action"]
   });
+});
+
+// Listen for tab activation changes
+chrome.tabs.onActivated.addListener((activeInfo) => {
+  if (speakingTabId !== null && speakingTabId !== activeInfo.tabId) {
+    console.log(`Tab switched from ${speakingTabId} to ${activeInfo.tabId}. Stopping TTS.`);
+    // Tell the offscreen document to stop playing
+    chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+    // Tell the original content script to clear its queues
+    chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" });
+    speakingTabId = null; // Reset state
+  }
+});
+
+// Listen for tab removal (closing)
+chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
+    if (speakingTabId !== null && speakingTabId === tabId) {
+        console.log(`Tab ${tabId} was closed. Stopping TTS.`);
+        chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+        speakingTabId = null;
+    }
 });
 
 // 监听右键菜单点击事件

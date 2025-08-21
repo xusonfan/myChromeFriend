@@ -92,6 +92,12 @@ function initializeLive2D() {
   });
 
   let conversationHistory = []; // 用于存储对话历史
+  let ttsSettings = {};
+  let ttsQueue = [];
+  let audioUrlQueue = [];
+  let isSpeaking = false;
+  let isFetching = false;
+  let currentAudio = null;
 
   // 创建一个包裹对话框和按钮的容器
   const dialogWrapper = document.createElement('div');
@@ -293,6 +299,7 @@ function initializeLive2D() {
 
   // 添加追问按钮事件
   askButton.addEventListener('click', (e) => {
+    stopTTS(); // 用户追问时停止TTS
     e.stopPropagation();
     askInput.style.display = askInput.style.display === 'none' ? 'block' : 'none';
     if (askInput.style.display === 'block') {
@@ -307,6 +314,7 @@ function initializeLive2D() {
       return;
     }
     if (e.key === 'Enter' && askInput.value.trim() !== '') {
+      stopTTS(); // 用户追问时停止TTS
       const question = askInput.value.trim();
       askInput.value = '';
       askInput.style.display = 'none';
@@ -502,42 +510,140 @@ function initializeLive2D() {
       .replace(/\n/gim, '<br>');
   }
 
+  // 清理文本以用于TTS
+  function cleanTextForTTS(text) {
+    return text
+      // 移除Markdown格式
+      .replace(/#{1,6} /g, '') // 标题
+      .replace(/\*\*|__|`|\*|_/g, '') // 粗体, 斜体, 代码
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // 链接
+      // 移除Emoji (一个基础的范围，可能不全)
+      .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '')
+      .trim();
+  }
+
+  // TTS处理队列
+  // 预加载下一个音频
+  async function fetchNextAudio() {
+    if (isFetching || ttsQueue.length === 0) {
+      return;
+    }
+    isFetching = true;
+    const textToSpeak = ttsQueue.shift();
+    const retries = ttsSettings.ttsRetryCount || 0;
+
+    for (let i = 0; i <= retries; i++) {
+      try {
+        const response = await fetch(ttsSettings.ttsApiEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: textToSpeak,
+            voice: ttsSettings.ttsVoice,
+            rate: ttsSettings.ttsRate / 100,
+            pitch: ttsSettings.ttsPitch / 100,
+          }),
+        });
+        if (!response.ok) throw new Error(`TTS API request failed with status ${response.status}`);
+        
+        const audioBlob = await response.blob();
+        const audioUrl = URL.createObjectURL(audioBlob);
+        audioUrlQueue.push(audioUrl);
+        playNextAudio(); // 尝试播放
+        
+        // 成功后退出循环
+        break;
+
+      } catch (error) {
+        console.error(`TTS音频获取失败 (尝试 ${i + 1}/${retries + 1}):`, error);
+        if (i === retries) {
+          // 这是最后一次尝试，仍然失败
+          console.error(`TTS请求在 ${retries + 1} 次尝试后最终失败。`);
+        }
+      }
+    }
+
+    isFetching = false;
+    // 立即尝试获取下一个，实现连续预加载
+    fetchNextAudio();
+  }
+
+  // 播放队列中的下一个音频
+  function playNextAudio() {
+    if (isSpeaking || audioUrlQueue.length === 0) {
+      return;
+    }
+    isSpeaking = true;
+    const audioUrl = audioUrlQueue.shift();
+    chrome.runtime.sendMessage({ type: 'PLAY_TTS_REQUEST', audioUrl: audioUrl });
+    // 开始播放后，立即尝试预加载下一个
+    fetchNextAudio();
+  }
+
+  // 停止TTS朗读
+  function stopTTS() {
+    // 向后台发送停止命令
+    chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+    
+    // 释放所有已创建的Blob URL
+    audioUrlQueue.forEach(url => URL.revokeObjectURL(url));
+    ttsQueue = [];
+    audioUrlQueue = [];
+    isSpeaking = false;
+    isFetching = false;
+  }
+
   let streamTimer = null; // 用于控制流式输出的定时器
 
-  // 流式显示函数（增强版）
+  // 流式显示函数（集成TTS）
   function streamText(element, text, speed = 15, callback) {
-    // 清除之前的定时器
-    if (streamTimer) {
-      clearTimeout(streamTimer);
-    }
+    stopTTS(); // 开始新的流式输出前，停止之前的朗读
+    if (streamTimer) clearTimeout(streamTimer);
 
     const contentElement = element.firstChild;
     contentElement.innerHTML = '';
     let index = 0;
     let currentText = '';
-    
+    let ttsBuffer = '';
+
     function typeWriter() {
       if (index < text.length) {
-        // 每次添加一个字符
         currentText += text.charAt(index);
+        ttsBuffer += text.charAt(index);
         index++;
-        
-        // 实时解析markdown并显示
+
         contentElement.innerHTML = parseMarkdown(currentText);
-        
-        // 更新渐变显示状态
         updateGradientVisibility();
-        
-        // 继续下一个字符
+
+        // 检查是否形成完整段落用于TTS (以换行符为界)
+        if (ttsSettings.enableTTS && ttsBuffer.includes('\n')) {
+          const paragraphs = ttsBuffer.split('\n');
+          // 处理所有完整的段落（除了最后一个可能不完整的）
+          for (let i = 0; i < paragraphs.length - 1; i++) {
+            const cleanedParagraph = cleanTextForTTS(paragraphs[i]);
+            if (cleanedParagraph) {
+              ttsQueue.push(cleanedParagraph);
+              fetchNextAudio(); // 触发预加载
+            }
+          }
+          // 更新缓冲区，只留下最后一个不完整的段落
+          ttsBuffer = paragraphs[paragraphs.length - 1];
+        }
+
         streamTimer = setTimeout(typeWriter, speed);
       } else {
-        streamTimer = null; // 输出完成，清除定时器ID
-        if (callback) {
-          callback(text); // 调用回调函数，并传入完整的文本
+        // 处理剩余的文本
+        if (ttsSettings.enableTTS && ttsBuffer.trim()) {
+          const cleanedParagraph = cleanTextForTTS(ttsBuffer);
+          if (cleanedParagraph) {
+            ttsQueue.push(cleanedParagraph);
+            fetchNextAudio(); // 触发预加载
+          }
         }
+        streamTimer = null;
+        if (callback) callback(text);
       }
     }
-    
     typeWriter();
   }
 
@@ -687,6 +793,7 @@ function initializeLive2D() {
       // 点击按钮时触发解释
       floatingButton.addEventListener('click', () => {
         if (lastSelectedText) {
+          stopTTS(); // 划词提问时停止TTS
           const contentElement = dialogBox.firstChild;
           contentElement.innerHTML = '正在思考中...';
           dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
@@ -741,12 +848,30 @@ function initializeLive2D() {
   });
 
   // 监听来自background.js的消息
+  chrome.storage.sync.get({
+    enableTTS: false,
+    ttsApiEndpoint: 'https://libretts.is-an.org/api/tts',
+    ttsRetryCount: 2,
+    ttsVoice: 'zh-CN-XiaoxiaoNeural',
+    ttsRate: 0,
+    ttsPitch: 0
+  }, items => {
+    ttsSettings = items;
+  });
+
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    if (request.type === "REFRESH_SUMMARY") {
+    if (request.type === 'TTS_PLAYBACK_FINISHED') {
+        isSpeaking = false;
+        playNextAudio(); // 播放完成，尝试播放下一个
+    } else if (request.type === "STOP_TTS") {
+        stopTTS();
+    } else if (request.type === "REFRESH_SUMMARY") {
       console.log("收到刷新总结内容的命令");
+      stopTTS();
       getSummaryOnLoad(true); // 强制刷新
     } else if (request.type === "CLOSE_DIALOG") {
       console.log("收到关闭对话框的命令，将清空内容并隐藏。");
+      stopTTS();
       const dialogWrapper = document.getElementById('dialog-wrapper');
       if (dialogWrapper) {
         dialogWrapper.style.display = 'none';
@@ -780,6 +905,7 @@ function initializeLive2D() {
           }
         } else {
           dialogWrapper.style.display = 'none';
+          stopTTS(); // 隐藏时停止TTS
           // 隐藏对话框时，也隐藏追问输入框
           const askInput = document.querySelector('#dialog-box input[type="text"]');
           if (askInput) {
