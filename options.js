@@ -170,6 +170,8 @@ function saveOptions() {
   // 快捷键现在通过 chrome://extensions/shortcuts 管理
   const autoSummarize = document.getElementById('auto-summarize').checked;
   const dialogSelectable = document.getElementById('dialog-selectable').checked;
+  const enableCache = document.getElementById('enable-cache').checked;
+  const cacheDuration = document.getElementById('cache-duration').value;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -189,7 +191,9 @@ function saveOptions() {
     blacklist: '',
     // refreshShortcut 和 closeShortcut 不再需要存储在这里
     autoSummarize: true,
-    dialogSelectable: false
+    dialogSelectable: false,
+    enableCache: true,
+    cacheDuration: 5
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -209,7 +213,9 @@ function saveOptions() {
       blacklist: blacklist,
       // refreshShortcut 和 closeShortcut 不再需要存储在这里
       autoSummarize: autoSummarize,
-      dialogSelectable: dialogSelectable
+      dialogSelectable: dialogSelectable,
+      enableCache: enableCache,
+      cacheDuration: parseInt(cacheDuration, 10) || 5
     };
 
     const hasChanges =
@@ -229,7 +235,9 @@ function saveOptions() {
       oldSettings.blacklist !== newSettings.blacklist ||
       // 快捷键比较逻辑不再需要
       oldSettings.autoSummarize !== newSettings.autoSummarize ||
-      oldSettings.dialogSelectable !== newSettings.dialogSelectable;
+      oldSettings.dialogSelectable !== newSettings.dialogSelectable ||
+      oldSettings.enableCache !== newSettings.enableCache ||
+      oldSettings.cacheDuration !== newSettings.cacheDuration;
 
     chrome.storage.sync.set(newSettings, () => {
       const saveButtonText = document.getElementById('save-button-text');
@@ -278,7 +286,9 @@ function restoreOptions() {
     blacklist: '', // 默认黑名单为空
     // refreshShortcut 和 closeShortcut 的默认值不再需要
     autoSummarize: true, // 默认启用自动总结
-    dialogSelectable: false
+    dialogSelectable: false,
+    enableCache: true,
+    cacheDuration: 5
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -298,10 +308,13 @@ function restoreOptions() {
     document.getElementById('blacklist').value = items.blacklist;
     document.getElementById('auto-summarize').checked = items.autoSummarize;
     document.getElementById('dialog-selectable').checked = items.dialogSelectable;
+    document.getElementById('enable-cache').checked = items.enableCache;
+    document.getElementById('cache-duration').value = items.cacheDuration;
 
 
     // 初始化UI状态
     updateAskPromptUI();
+    updateCacheDurationUI();
 
     // 移除API设置的自动隐藏功能，现在API设置始终可见
 
@@ -344,6 +357,21 @@ function updateAskPromptUI() {
   } else {
     askPromptGroup.style.opacity = '0.5';
     askPromptTextarea.disabled = true;
+  }
+}
+
+// 根据启用状态，更新缓存时长输入框的UI
+function updateCacheDurationUI() {
+  const enableCache = document.getElementById('enable-cache').checked;
+  const cacheDurationGroup = document.getElementById('cache-duration-group');
+  const cacheDurationInput = document.getElementById('cache-duration');
+
+  if (enableCache) {
+    cacheDurationGroup.style.opacity = '1';
+    cacheDurationInput.disabled = false;
+  } else {
+    cacheDurationGroup.style.opacity = '0.5';
+    cacheDurationInput.disabled = true;
   }
 }
 
@@ -392,6 +420,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // 确保在restoreOptions完成后再添加事件监听器
   setTimeout(() => {
     document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
+    document.getElementById('enable-cache').addEventListener('change', updateCacheDurationUI);
   }, 100);
 
   // 获取并显示版本号

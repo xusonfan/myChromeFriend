@@ -1170,6 +1170,16 @@
               <span class="checkbox-label">启用对话追问功能（在对话框中显示追问按钮）</span>
             </div>
           </div>
+          <div class="form-group">
+            <div class="checkbox-wrapper">
+              <input type="checkbox" id="enable-cache" checked>
+              <span class="checkbox-label">启用内容缓存（减少相同页面的重复请求）</span>
+            </div>
+            <div id="cache-duration-group" class="sub-group">
+              <label for="cache-duration">缓存有效期（分钟）</label>
+              <input type="number" id="cache-duration" placeholder="例如: 5" min="1">
+            </div>
+          </div>
         </div>
 
         <!-- 内容控制面板 -->

@@ -202,7 +202,7 @@ function initializeLive2D() {
   // 添加刷新事件
   refreshButton.addEventListener('click', (e) => {
     e.stopPropagation();
-    getSummaryOnLoad();
+    getSummaryOnLoad(true); // 强制刷新
   });
    
   // 添加悬停效果
@@ -542,45 +542,94 @@ function initializeLive2D() {
   }
 
   // 页面加载后自动获取总结
-  function getSummaryOnLoad() {
-    // 刷新时，隐藏追问输入框
-    if (askInput) {
-      askInput.style.display = 'none';
-    }
-    const contentElement = dialogBox.firstChild;
-    // 立即显示"正在思考中"并保持可见
-    contentElement.innerHTML = '飞速阅读中...';
-    dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
-    conversationHistory = []; // 开始新的总结时，清空历史记录
-    
-    // 更新渐变显示状态
-    setTimeout(updateGradientVisibility, 100);
+  // 页面加载后自动获取总结
+  function getSummaryOnLoad(forceRefresh = false) {
+    chrome.storage.sync.get({
+      enableCache: true,
+      cacheDuration: 5
+    }, (items) => {
+      // 刷新时，隐藏追问输入框
+      if (askInput) {
+        askInput.style.display = 'none';
+      }
+      
+      const contentElement = dialogBox.firstChild;
+      dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
+      
+      const CACHE_KEY = 'myChromeFriendSummaryCache';
+      const CACHE_DURATION = (items.cacheDuration || 5) * 60 * 1000;
+      const now = new Date().getTime();
 
-    // 从页面获取文本内容
-    // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
-    setTimeout(() => {
-      const pageText = document.body.innerText;
-      const userMessage = { role: 'user', content: pageText };
-      conversationHistory.push(userMessage);
+      if (forceRefresh || !items.enableCache) {
+        sessionStorage.removeItem(CACHE_KEY);
+        if (forceRefresh) console.log("强制刷新，已清除缓存。");
+        if (!items.enableCache) console.log("缓存已禁用，清除缓存。");
+      } else {
+        const cachedData = sessionStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          try {
+            const { summary, timestamp } = JSON.parse(cachedData);
+            if (summary && (now - timestamp < CACHE_DURATION)) {
+              console.log("使用缓存的总结内容。");
+              conversationHistory = []; // 每次都重置历史
+              const pageText = document.body.innerText;
+              const userMessage = { role: 'user', content: pageText };
+              conversationHistory.push(userMessage);
 
-      // 发送消息到background.js
-      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
-        if (response && response.summary) {
-          // 使用流式显示，并在结束后更新历史记录
-          streamText(dialogBox, response.summary, 15, (fullText) => {
-            conversationHistory.push({ role: 'assistant', content: fullText });
-            // 流式输出完成后再次检查渐变状态
-            setTimeout(updateGradientVisibility, 100);
-          });
-        } else {
-          // 如果没有收到有效的响应，也显示错误信息
-          streamText(dialogBox, '未能获取响应。');
-          conversationHistory.pop(); // 移除失败的用户消息
+              streamText(dialogBox, summary, 15, (fullText) => {
+                conversationHistory.push({ role: 'assistant', content: fullText });
+                setTimeout(updateGradientVisibility, 100);
+              });
+              return;
+            }
+          } catch (e) {
+            console.error("解析缓存失败", e);
+            sessionStorage.removeItem(CACHE_KEY);
+          }
         }
-      });
-    }, 500); // 500毫秒的延迟
-  }
+      }
 
+      // 立即显示"正在思考中"并保持可见
+      contentElement.innerHTML = '飞速阅读中...';
+      conversationHistory = []; // 开始新的总结时，清空历史记录
+      
+      // 更新渐变显示状态
+      setTimeout(updateGradientVisibility, 100);
+
+      // 从页面获取文本内容
+      // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
+      setTimeout(() => {
+        const pageText = document.body.innerText;
+        const userMessage = { role: 'user', content: pageText };
+        conversationHistory.push(userMessage);
+
+        // 发送消息到background.js
+        chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
+          if (response && response.summary) {
+            // 如果启用了缓存，则更新缓存
+            if (items.enableCache) {
+              const cacheValue = {
+                summary: response.summary,
+                timestamp: new Date().getTime()
+              };
+              sessionStorage.setItem(CACHE_KEY, JSON.stringify(cacheValue));
+            }
+
+            // 使用流式显示，并在结束后更新历史记录
+            streamText(dialogBox, response.summary, 15, (fullText) => {
+              conversationHistory.push({ role: 'assistant', content: fullText });
+              // 流式输出完成后再次检查渐变状态
+              setTimeout(updateGradientVisibility, 100);
+            });
+          } else {
+            // 如果没有收到有效的响应，也显示错误信息
+            streamText(dialogBox, '未能获取响应。');
+            conversationHistory.pop(); // 移除失败的用户消息
+          }
+        });
+      }, 500); // 500毫秒的延迟
+    });
+  }
   // 根据用户设置决定是否启用划词提问功能
   chrome.storage.sync.get({
     enableFloatingButton: true, // 默认启用
@@ -695,7 +744,7 @@ function initializeLive2D() {
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "REFRESH_SUMMARY") {
       console.log("收到刷新总结内容的命令");
-      getSummaryOnLoad();
+      getSummaryOnLoad(true); // 强制刷新
     } else if (request.type === "CLOSE_DIALOG") {
       console.log("收到关闭对话框的命令，将清空内容并隐藏。");
       const dialogWrapper = document.getElementById('dialog-wrapper');
