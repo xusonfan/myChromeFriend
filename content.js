@@ -44,6 +44,12 @@ chrome.storage.sync.get({
 
 
 function initializeLive2D() {
+  // 优化：在单页应用（SPA）中，如果窗口部件已存在，则不重新加载
+  if (document.getElementById('live2d-widget')) {
+    console.log('看板娘已存在，跳过重复加载。');
+    return;
+  }
+
   // 创建Live2D挂件容器和Canvas
   const live2dWidget = document.createElement('div');
   live2dWidget.id = 'live2d-widget';
