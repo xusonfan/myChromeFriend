@@ -684,7 +684,17 @@ function initializeLive2D() {
             if (summary && (now - timestamp < CACHE_DURATION)) {
               console.log("使用缓存的总结内容。");
               conversationHistory = []; // 每次都重置历史
-              const pageText = document.body.innerText;
+              // 通过克隆body并移除插件UI来获取纯净的页面文本
+              const bodyClone = document.body.cloneNode(true);
+              const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+              if (dialogClone) {
+                dialogClone.remove();
+              }
+              const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+              if (floatingButtonClone) {
+                floatingButtonClone.remove();
+              }
+              const pageText = bodyClone.innerText;
               const userMessage = { role: 'user', content: pageText };
               conversationHistory.push(userMessage);
 
@@ -711,7 +721,17 @@ function initializeLive2D() {
       // 从页面获取文本内容
       // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
       setTimeout(() => {
-        const pageText = document.body.innerText;
+        // 通过克隆body并移除插件UI来获取纯净的页面文本
+        const bodyClone = document.body.cloneNode(true);
+        const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+        if (dialogClone) {
+          dialogClone.remove();
+        }
+        const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+        if (floatingButtonClone) {
+          floatingButtonClone.remove();
+        }
+        const pageText = bodyClone.innerText;
         const userMessage = { role: 'user', content: pageText };
         conversationHistory.push(userMessage);
 
@@ -808,7 +828,17 @@ function initializeLive2D() {
           // 更新渐变显示状态
           setTimeout(updateGradientVisibility, 100);
 
-          const pageContext = document.body.innerText;
+          // 通过克隆body并移除插件UI来获取纯净的页面上下文
+          const bodyClone = document.body.cloneNode(true);
+          const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+          if (dialogClone) {
+            dialogClone.remove();
+          }
+          const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+          if (floatingButtonClone) {
+            floatingButtonClone.remove();
+          }
+          const pageContext = bodyClone.innerText;
           const combinedText = askPromptTemplate
             .replace('{selection}', lastSelectedText)
             .replace('{context}', pageContext);
