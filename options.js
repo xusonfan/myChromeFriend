@@ -180,6 +180,7 @@ function saveOptions() {
   const ttsPitch = document.getElementById('tts-pitch').value;
   const ttsVolume = document.getElementById('tts-volume').value;
   const ttsBackgroundPlay = document.getElementById('tts-background-play').checked;
+  const autoPlayTTS = document.getElementById('auto-play-tts').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -209,7 +210,8 @@ function saveOptions() {
     ttsRate: 0,
     ttsPitch: 0,
     ttsVolume: 100,
-    ttsBackgroundPlay: false
+    ttsBackgroundPlay: false,
+    autoPlayTTS: true
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -239,7 +241,8 @@ function saveOptions() {
       ttsRate: parseInt(ttsRate, 10),
       ttsPitch: parseInt(ttsPitch, 10),
       ttsVolume: parseInt(ttsVolume, 10),
-      ttsBackgroundPlay: ttsBackgroundPlay
+      ttsBackgroundPlay: ttsBackgroundPlay,
+      autoPlayTTS: autoPlayTTS
     };
 
     const hasChanges =
@@ -269,7 +272,8 @@ function saveOptions() {
       oldSettings.ttsRate !== newSettings.ttsRate ||
       oldSettings.ttsPitch !== newSettings.ttsPitch ||
       oldSettings.ttsVolume !== newSettings.ttsVolume ||
-      oldSettings.ttsBackgroundPlay !== newSettings.ttsBackgroundPlay;
+      oldSettings.ttsBackgroundPlay !== newSettings.ttsBackgroundPlay ||
+      oldSettings.autoPlayTTS !== newSettings.autoPlayTTS;
 
     chrome.storage.sync.set(newSettings, () => {
       const saveButtonText = document.getElementById('save-button-text');
@@ -328,7 +332,8 @@ function restoreOptions() {
     ttsRate: 0,
     ttsPitch: 0,
     ttsVolume: 100,
-    ttsBackgroundPlay: false
+    ttsBackgroundPlay: false,
+    autoPlayTTS: true
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -360,6 +365,7 @@ function restoreOptions() {
     document.getElementById('tts-volume').value = items.ttsVolume;
     document.getElementById('tts-volume-value').textContent = `${items.ttsVolume}%`;
     document.getElementById('tts-background-play').checked = items.ttsBackgroundPlay;
+    document.getElementById('auto-play-tts').checked = items.autoPlayTTS;
 
 
     // 初始化UI状态

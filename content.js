@@ -615,7 +615,7 @@ function initializeLive2D() {
         updateGradientVisibility();
 
         // 检查是否形成完整段落用于TTS (以换行符为界)
-        if (ttsSettings.enableTTS && ttsBuffer.includes('\n')) {
+        if (ttsSettings.enableTTS && ttsSettings.autoPlayTTS && ttsBuffer.includes('\n')) {
           const paragraphs = ttsBuffer.split('\n');
           // 处理所有完整的段落（除了最后一个可能不完整的）
           for (let i = 0; i < paragraphs.length - 1; i++) {
@@ -632,7 +632,8 @@ function initializeLive2D() {
         streamTimer = setTimeout(typeWriter, speed);
       } else {
         // 处理剩余的文本
-        if (ttsSettings.enableTTS && ttsBuffer.trim()) {
+        // 检查是否启用了TTS和自动播放
+        if (ttsSettings.enableTTS && ttsSettings.autoPlayTTS && ttsBuffer.trim()) {
           const cleanedParagraph = cleanTextForTTS(ttsBuffer);
           if (cleanedParagraph) {
             ttsQueue.push(cleanedParagraph);
@@ -836,27 +837,25 @@ function initializeLive2D() {
     }
   });
 
-  // 根据设置决定是否在加载时自动总结
+  // 一次性加载所有需要的设置，以避免竞争条件
   chrome.storage.sync.get({
-    autoSummarize: true // 默认启用
-  }, (items) => {
-    if (items.autoSummarize) {
-      // 脚本加载时立即执行
-      getSummaryOnLoad();
-    }
-  });
-
-  // 监听来自background.js的消息
-  chrome.storage.sync.get({
+    autoSummarize: true,
     enableTTS: false,
     ttsApiEndpoint: 'https://libretts.is-an.org/api/tts',
     ttsRetryCount: 2,
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
     ttsPitch: 0,
-    ttsBackgroundPlay: false
+    ttsBackgroundPlay: false,
+    autoPlayTTS: true
   }, items => {
+    // 首先，将所有TTS相关的设置加载到内存中
     ttsSettings = items;
+
+    // 然后，在确认设置已加载后，再根据autoSummarize的设置决定是否执行总结
+    if (items.autoSummarize) {
+      getSummaryOnLoad();
+    }
   });
 
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
