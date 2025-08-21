@@ -853,7 +853,8 @@ function initializeLive2D() {
     ttsRetryCount: 2,
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
-    ttsPitch: 0
+    ttsPitch: 0,
+    ttsBackgroundPlay: false
   }, items => {
     ttsSettings = items;
   });

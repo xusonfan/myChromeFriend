@@ -178,6 +178,7 @@ function saveOptions() {
   const ttsVoice = document.getElementById('tts-voice').value;
   const ttsRate = document.getElementById('tts-rate').value;
   const ttsPitch = document.getElementById('tts-pitch').value;
+  const ttsBackgroundPlay = document.getElementById('tts-background-play').checked;
 
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
@@ -205,7 +206,8 @@ function saveOptions() {
     ttsRetryCount: 2,
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
-    ttsPitch: 0
+    ttsPitch: 0,
+    ttsBackgroundPlay: false
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -233,7 +235,8 @@ function saveOptions() {
       ttsRetryCount: parseInt(ttsRetryCount, 10) || 0,
       ttsVoice: ttsVoice,
       ttsRate: parseInt(ttsRate, 10),
-      ttsPitch: parseInt(ttsPitch, 10)
+      ttsPitch: parseInt(ttsPitch, 10),
+      ttsBackgroundPlay: ttsBackgroundPlay
     };
 
     const hasChanges =
@@ -261,7 +264,8 @@ function saveOptions() {
       oldSettings.ttsRetryCount !== newSettings.ttsRetryCount ||
       oldSettings.ttsVoice !== newSettings.ttsVoice ||
       oldSettings.ttsRate !== newSettings.ttsRate ||
-      oldSettings.ttsPitch !== newSettings.ttsPitch;
+      oldSettings.ttsPitch !== newSettings.ttsPitch ||
+      oldSettings.ttsBackgroundPlay !== newSettings.ttsBackgroundPlay;
 
     chrome.storage.sync.set(newSettings, () => {
       const saveButtonText = document.getElementById('save-button-text');
@@ -318,7 +322,8 @@ function restoreOptions() {
     ttsRetryCount: 2,
     ttsVoice: 'zh-CN-XiaoxiaoNeural',
     ttsRate: 0,
-    ttsPitch: 0
+    ttsPitch: 0,
+    ttsBackgroundPlay: false
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -347,6 +352,7 @@ function restoreOptions() {
     document.getElementById('tts-rate-value').textContent = `${items.ttsRate}%`;
     document.getElementById('tts-pitch').value = items.ttsPitch;
     document.getElementById('tts-pitch-value').textContent = `${items.ttsPitch}%`;
+    document.getElementById('tts-background-play').checked = items.ttsBackgroundPlay;
 
 
     // 初始化UI状态

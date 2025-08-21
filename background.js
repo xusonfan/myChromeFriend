@@ -30,7 +30,13 @@ async function setupOffscreenDocument(path, reason) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.type === 'PLAY_TTS_REQUEST') {
     const tabId = sender.tab.id;
-    speakingTabId = tabId; // Set the currently speaking tab
+    // 如果有另一个标签页正在播放，先停止它
+    if (speakingTabId !== null && speakingTabId !== tabId) {
+      console.log(`收到来自标签页 ${tabId} 的新TTS请求，停止正在播放的标签页 ${speakingTabId}。`);
+      chrome.runtime.sendMessage({ type: 'STOP_TTS' }); // 停止离屏播放
+      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" }); // 清理旧标签页的队列
+    }
+    speakingTabId = tabId; // 设置当前正在说话的标签页
     setupOffscreenDocument('offscreen.html', 'AUDIO_PLAYBACK').then(() => {
       chrome.runtime.sendMessage({ type: 'PLAY_TTS', audioUrl: request.audioUrl, tabId: tabId });
     });
@@ -268,14 +274,16 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Listen for tab activation changes
 chrome.tabs.onActivated.addListener((activeInfo) => {
-  if (speakingTabId !== null && speakingTabId !== activeInfo.tabId) {
-    console.log(`Tab switched from ${speakingTabId} to ${activeInfo.tabId}. Stopping TTS.`);
-    // Tell the offscreen document to stop playing
-    chrome.runtime.sendMessage({ type: 'STOP_TTS' });
-    // Tell the original content script to clear its queues
-    chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" });
-    speakingTabId = null; // Reset state
-  }
+  chrome.storage.sync.get({ ttsBackgroundPlay: false }, (items) => {
+    if (!items.ttsBackgroundPlay && speakingTabId !== null && speakingTabId !== activeInfo.tabId) {
+      console.log(`Tab switched from ${speakingTabId} to ${activeInfo.tabId}. Stopping TTS.`);
+      // Tell the offscreen document to stop playing
+      chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+      // Tell the original content script to clear its queues
+      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" });
+      speakingTabId = null; // Reset state
+    }
+  });
 });
 
 // Listen for tab removal (closing)
