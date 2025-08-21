@@ -270,6 +270,27 @@ function initializeLive2D() {
     }
   }, { passive: false }); // 必须设置 passive 为 false 才能调用 preventDefault
 
+  // 对话框滚动检测和渐变效果控制
+  const updateGradientVisibility = () => {
+    // 检查内容是否可以滚动
+    const canScroll = dialogBox.scrollHeight > dialogBox.clientHeight;
+    // 检查是否滚动到底部（添加2px容差）
+    const isAtBottom = dialogBox.scrollTop + dialogBox.clientHeight >= dialogBox.scrollHeight - 2;
+    
+    // 当内容可以滚动且未滚动到底部时显示渐变
+    if (canScroll && !isAtBottom) {
+      dialogWrapper.classList.add('show-gradient');
+    } else {
+      dialogWrapper.classList.remove('show-gradient');
+    }
+  };
+
+  // 监听滚动事件
+  dialogBox.addEventListener('scroll', updateGradientVisibility);
+  
+  // 初始化时检查一次渐变显示状态
+  setTimeout(updateGradientVisibility, 100);
+
   // 添加追问按钮事件
   askButton.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -432,6 +453,33 @@ function initializeLive2D() {
     #dialog-box::-webkit-scrollbar-thumb {
       background: transparent;
     }
+    
+    /* 对话框底部渐变效果 */
+    #dialog-wrapper::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 20px;
+      background: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.4) 30%,
+        rgba(255, 255, 255, 0.7) 60%,
+        rgba(255, 255, 255, 0.9) 100%
+      );
+      border-radius: 0 0 12px 12px;
+      pointer-events: none;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 1;
+    }
+    
+    #dialog-wrapper.show-gradient::after {
+      opacity: 1;
+      visibility: visible;
+    }
   `;
   document.head.appendChild(style);
 
@@ -477,6 +525,9 @@ function initializeLive2D() {
         // 实时解析markdown并显示
         contentElement.innerHTML = parseMarkdown(currentText);
         
+        // 更新渐变显示状态
+        updateGradientVisibility();
+        
         // 继续下一个字符
         streamTimer = setTimeout(typeWriter, speed);
       } else {
@@ -501,6 +552,9 @@ function initializeLive2D() {
     contentElement.innerHTML = '飞速阅读中...';
     dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
     conversationHistory = []; // 开始新的总结时，清空历史记录
+    
+    // 更新渐变显示状态
+    setTimeout(updateGradientVisibility, 100);
 
     // 从页面获取文本内容
     // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
@@ -515,6 +569,8 @@ function initializeLive2D() {
           // 使用流式显示，并在结束后更新历史记录
           streamText(dialogBox, response.summary, 15, (fullText) => {
             conversationHistory.push({ role: 'assistant', content: fullText });
+            // 流式输出完成后再次检查渐变状态
+            setTimeout(updateGradientVisibility, 100);
           });
         } else {
           // 如果没有收到有效的响应，也显示错误信息
@@ -586,6 +642,9 @@ function initializeLive2D() {
           contentElement.innerHTML = '正在思考中...';
           dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
           conversationHistory = []; // 开始新的划词提问时，清空历史记录
+          
+          // 更新渐变显示状态
+          setTimeout(updateGradientVisibility, 100);
 
           const pageContext = document.body.innerText;
           const combinedText = askPromptTemplate
@@ -599,6 +658,8 @@ function initializeLive2D() {
             if (response && response.summary) {
               streamText(dialogBox, response.summary, 15, (fullText) => {
                 conversationHistory.push({ role: 'assistant', content: fullText });
+                // 流式输出完成后再次检查渐变状态
+                setTimeout(updateGradientVisibility, 100);
               });
             } else {
               streamText(dialogBox, '未能获取响应。');
