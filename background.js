@@ -95,7 +95,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const signal = controller.signal;
 
     // 从Chrome存储中获取API配置
-    chrome.storage.sync.get(['apiEndpoint', 'apiKey', 'modelName', 'prompt', 'maxTokens', 'retryCount'], (config) => {
+    chrome.storage.sync.get(['apiEndpoint', 'apiKey', 'modelName', 'prompts', 'selectedPromptId', 'maxTokens', 'retryCount'], (config) => {
       console.log("收到了内容脚本的请求，正在获取配置...");
 
       if (!config.apiEndpoint || !config.apiKey) {
@@ -107,8 +107,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       console.log("配置获取成功。");
       const API_ENDPOINT = config.apiEndpoint;
       const API_KEY = config.apiKey;
-      const MODEL_NAME = config.modelName || 'gpt-4'; // 使用保存的模型或默认值
-      const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。'; // 使用保存的提示词或默认值
+      const MODEL_NAME = config.modelName || 'gpt-4';
+
+      // 根据 selectedPromptId 查找当前使用的提示词
+      const selectedPrompt = config.prompts.find(p => p.id === config.selectedPromptId);
+
+      if (!selectedPrompt) {
+        console.log("未找到选定的提示词，请在设置页面重新选择。");
+        sendResponse({ summary: "未能获取当前选定的人设提示词，请前往设置页面重新选择并保存。" });
+        return;
+      }
+      const PROMPT = selectedPrompt.value;
       const MAX_TOKENS = config.maxTokens || '1000'; // 使用保存的最大令牌数或默认值
       const RETRY_COUNT = config.retryCount || 3; // 使用保存的重试次数或默认值
 

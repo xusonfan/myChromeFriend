@@ -1024,6 +1024,24 @@
     .tooltip:hover::after {
       opacity: 1;
     }
+    /* 新增：提示词管理区域样式 */
+    .prompt-management {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .prompt-management select {
+      flex: 1;
+    }
+    .prompt-management .btn-small {
+      padding: 0.5rem;
+      min-width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
 </head>
 <body>
@@ -1127,8 +1145,17 @@
             <input type="number" id="retry-count" placeholder="例如: 3">
           </div>
           <div class="form-group">
-            <label for="prompt">总结提示词</label>
-            <textarea id="prompt" placeholder="例如: 请以一个动漫少女的口吻，用中文总结并评论以下网页内容..."></textarea>
+            <label for="prompt-select">总结提示词人设</label>
+            <div class="prompt-management">
+              <select id="prompt-select"></select>
+              <button id="add-prompt" class="btn btn-secondary btn-small tooltip" data-tooltip="新增人设">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z"/></svg>
+              </button>
+              <button id="delete-prompt" class="btn btn-secondary btn-small tooltip" data-tooltip="删除当前人设">
+                <svg width="16" height="16" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+              </button>
+            </div>
+            <textarea id="prompt" placeholder="请在这里填写新的人设提示词..."></textarea>
           </div>
         </div>
 

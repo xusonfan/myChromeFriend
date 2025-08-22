@@ -151,12 +151,41 @@ async function fetchModels() {
   });
 }
 
+// 新增：从 JSON 文件加载默认提示词
+async function loadDefaultPrompts() {
+  try {
+    const response = await fetch(chrome.runtime.getURL('prompts.json'));
+    if (!response.ok) {
+      throw new Error(`Failed to fetch prompts.json: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error loading default prompts:', error);
+    // 返回一个基础的默认值以防万一
+    return [{ id: 'default', name: '默认动漫少女', value: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。' }];
+  }
+}
+
 // 将选项保存到 chrome.storage.sync。
-function saveOptions() {
+async function saveOptions() {
+  // 保存当前编辑的提示词内容
+  const currentPromptText = document.getElementById('prompt').value;
+  const selectedPromptId = document.getElementById('prompt-select').value;
+  if (selectedPromptId) {
+    const selectedOption = document.querySelector(`#prompt-select option[value="${selectedPromptId}"]`);
+    if (selectedOption) {
+      // 更新内存中的 prompt 对象
+      const prompt = prompts.find(p => p.id === selectedPromptId);
+      if (prompt) {
+        prompt.value = currentPromptText;
+      }
+    }
+  }
+
   const apiEndpoint = document.getElementById('api-endpoint').value;
   const apiKey = document.getElementById('api-key').value;
   const modelName = document.getElementById('model-name').value;
-  const prompt = document.getElementById('prompt').value;
+  // prompt 不再直接从 textarea 读取，而是从 prompts 数组中获取
   const maxTokens = document.getElementById('max-tokens').value;
   const retryCount = document.getElementById('retry-count').value;
   const characterModel = document.getElementById('character-model').value;
@@ -182,12 +211,14 @@ function saveOptions() {
   const ttsBackgroundPlay = document.getElementById('tts-background-play').checked;
   const autoPlayTTS = document.getElementById('auto-play-tts').checked;
 
+  const defaultPrompts = await loadDefaultPrompts();
   // 先获取当前保存的设置，用于比较是否有变化
   chrome.storage.sync.get({
     apiEndpoint: '',
     apiKey: '',
     modelName: 'gpt-4',
-    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。',
+    prompts: defaultPrompts,
+    selectedPromptId: 'default',
     maxTokens: '1000',
     retryCount: 3, // 默认重试3次
     characterModel: 'shizuku',
@@ -221,7 +252,8 @@ function saveOptions() {
       apiEndpoint: apiEndpoint,
       apiKey: apiKey,
       modelName: modelName,
-      prompt: prompt,
+      prompts: prompts, // 保存完整的人设数组
+      selectedPromptId: document.getElementById('prompt-select').value,
       maxTokens: maxTokens,
       retryCount: parseInt(retryCount, 10) || 0,
       characterModel: characterModel,
@@ -246,10 +278,12 @@ function saveOptions() {
     };
 
     const hasChanges =
+      // 深度比较 prompts 数组
+      JSON.stringify(oldSettings.prompts) !== JSON.stringify(newSettings.prompts) ||
+      oldSettings.selectedPromptId !== newSettings.selectedPromptId ||
       oldSettings.apiEndpoint !== newSettings.apiEndpoint ||
       oldSettings.apiKey !== newSettings.apiKey ||
       oldSettings.modelName !== newSettings.modelName ||
-      oldSettings.prompt !== newSettings.prompt ||
       oldSettings.maxTokens !== newSettings.maxTokens ||
       oldSettings.retryCount !== newSettings.retryCount ||
       oldSettings.characterModel !== newSettings.characterModel ||
@@ -304,12 +338,17 @@ function saveOptions() {
 }
 
 // 使用存储在 chrome.storage 中的首选项恢复表单字段。
-function restoreOptions() {
+// 全局变量，用于存储当前的人设列表
+let prompts = [];
+
+async function restoreOptions() {
+  const defaultPrompts = await loadDefaultPrompts();
   chrome.storage.sync.get({
     apiEndpoint: '',
     apiKey: '',
     modelName: 'gpt-4', // 默认值
-    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。', // 默认值
+    prompts: defaultPrompts,
+    selectedPromptId: 'default',
     maxTokens: '1000', // 默认值
     retryCount: 3, // 默认值
     characterModel: 'shizuku', // 默认角色
@@ -337,7 +376,11 @@ function restoreOptions() {
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
-    document.getElementById('prompt').value = items.prompt;
+    
+    // 加载和显示提示词
+    prompts = items.prompts;
+    loadPrompts(items.selectedPromptId);
+
     document.getElementById('max-tokens').value = items.maxTokens;
     document.getElementById('retry-count').value = items.retryCount;
     document.getElementById('character-model').value = items.characterModel;
@@ -595,11 +638,85 @@ function displayShortcuts() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  restoreOptions();
+// --- 提示词管理功能 ---
+function loadPrompts(selectedId) {
+  const promptSelect = document.getElementById('prompt-select');
+  const promptTextarea = document.getElementById('prompt');
+  promptSelect.innerHTML = '';
+
+  prompts.forEach(prompt => {
+    const option = document.createElement('option');
+    option.value = prompt.id;
+    option.textContent = prompt.name;
+    promptSelect.appendChild(option);
+  });
+
+  promptSelect.value = selectedId;
+
+  const selectedPrompt = prompts.find(p => p.id === selectedId);
+  if (selectedPrompt) {
+    promptTextarea.value = selectedPrompt.value;
+  } else if (prompts.length > 0) {
+    // 如果找不到选中的，默认显示第一个
+    promptSelect.value = prompts.id;
+    promptTextarea.value = prompts.value;
+  } else {
+    promptTextarea.value = '';
+  }
+}
+
+function setupPromptManagement() {
+  const promptSelect = document.getElementById('prompt-select');
+  const promptTextarea = document.getElementById('prompt');
+  const addPromptBtn = document.getElementById('add-prompt');
+  const deletePromptBtn = document.getElementById('delete-prompt');
+
+  // 切换人设时，更新文本框内容
+  promptSelect.addEventListener('change', () => {
+    const selectedId = promptSelect.value;
+    const selectedPrompt = prompts.find(p => p.id === selectedId);
+    if (selectedPrompt) {
+      promptTextarea.value = selectedPrompt.value;
+    }
+  });
+
+  // 添加新人设
+  addPromptBtn.addEventListener('click', () => {
+    const newName = prompt('请输入新的人设名称:', `新人设 ${prompts.length + 1}`);
+    if (newName && newName.trim() !== '') {
+      const newId = `prompt_${new Date().getTime()}`;
+      const newPrompt = {
+        id: newId,
+        name: newName.trim(),
+        value: ''
+      };
+      prompts.push(newPrompt);
+      loadPrompts(newId); // 重新加载并选中新的
+    }
+  });
+
+  // 删除当前人设
+  deletePromptBtn.addEventListener('click', () => {
+    if (prompts.length <= 1) {
+      alert('至少需要保留一个人设。');
+      return;
+    }
+    const selectedId = promptSelect.value;
+    const selectedPrompt = prompts.find(p => p.id === selectedId);
+    if (selectedPrompt && confirm(`确定要删除人设 "${selectedPrompt.name}" 吗？`)) {
+      prompts = prompts.filter(p => p.id !== selectedId);
+      loadPrompts(prompts?.id); // 重新加载并选中第一个
+    }
+  });
+}
+
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await restoreOptions();
   setupApiSettingsToggle();
   setupNavigation(); // 添加导航功能
   displayShortcuts(); // 显示快捷键
+  setupPromptManagement(); // 初始化提示词管理功能
 
   // 确保在restoreOptions完成后再添加事件监听器
   setTimeout(() => {
