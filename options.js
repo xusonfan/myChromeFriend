@@ -187,7 +187,7 @@ function saveOptions() {
     apiEndpoint: '',
     apiKey: '',
     modelName: 'gpt-4',
-    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。',
+    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。',
     maxTokens: '1000',
     retryCount: 3, // 默认重试3次
     characterModel: 'shizuku',
@@ -309,7 +309,7 @@ function restoreOptions() {
     apiEndpoint: '',
     apiKey: '',
     modelName: 'gpt-4', // 默认值
-    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。', // 默认值
+    prompt: '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。', // 默认值
     maxTokens: '1000', // 默认值
     retryCount: 3, // 默认值
     characterModel: 'shizuku', // 默认角色

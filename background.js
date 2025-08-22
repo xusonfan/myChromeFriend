@@ -34,8 +34,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // 如果有另一个标签页正在播放，先停止它
     if (speakingTabId !== null && speakingTabId !== tabId) {
       console.log(`收到来自标签页 ${tabId} 的新TTS请求，停止正在播放的标签页 ${speakingTabId}。`);
-      chrome.runtime.sendMessage({ type: 'STOP_TTS' }); // 停止离屏播放
-      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" }); // 清理旧标签页的队列
+      chrome.runtime.sendMessage({ type: 'STOP_TTS' }, () => {
+        if (chrome.runtime.lastError) {
+          console.log(`向 offscreen 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+        }
+      }); // 停止离屏播放
+      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" }, () => {
+        if (chrome.runtime.lastError) {
+          console.log(`向标签页 ${speakingTabId} 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+        }
+      }); // 清理旧标签页的队列
     }
     speakingTabId = tabId; // 设置当前正在说话的标签页
     setupOffscreenDocument('offscreen.html', 'AUDIO_PLAYBACK').then(() => {
@@ -51,12 +59,27 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   } else if (request.type === 'TTS_PLAYBACK_FINISHED') {
     // Forward the message to the content script in the correct tab
     if (sender.url.includes('offscreen.html') && request.tabId) {
-        chrome.tabs.sendMessage(request.tabId, { type: 'TTS_PLAYBACK_FINISHED' });
+        chrome.tabs.sendMessage(request.tabId, { type: 'TTS_PLAYBACK_FINISHED' }, () => {
+          if (chrome.runtime.lastError) {
+            console.log(`向标签页 ${request.tabId} 发送 TTS_PLAYBACK_FINISHED 消息失败: ${chrome.runtime.lastError.message}`);
+          }
+        });
+        // 播放结束后重置正在说话的标签页ID
+        speakingTabId = null;
     }
   } else if (request.type === 'STOP_TTS') {
     // Forward the stop message to the offscreen document and clear state
     speakingTabId = null;
-    chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+    // 检查offscreen document是否存在，避免不必要的错误日志
+    chrome.runtime.getContexts({ contextTypes: ['OFFSCREEN_DOCUMENT'] }).then(contexts => {
+      if (contexts.length > 0) {
+        chrome.runtime.sendMessage({ type: 'STOP_TTS' }, () => {
+          if (chrome.runtime.lastError) {
+            console.log(`向 offscreen 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+          }
+        });
+      }
+    });
   } else if (request.type === 'GET_SUMMARY') {
     const tabId = sender.tab.id;
 
@@ -85,7 +108,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const API_ENDPOINT = config.apiEndpoint;
       const API_KEY = config.apiKey;
       const MODEL_NAME = config.modelName || 'gpt-4'; // 使用保存的模型或默认值
-      const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，忽略其中无关的文字，抓住主题，字数控制在300字左右。'; // 使用保存的提示词或默认值
+      const PROMPT = config.prompt || '请以一个动漫少女的口吻，用中文总结并评论以下网页内容，抓住主题，忽略其中无关的文字，字数控制在300字左右。'; // 使用保存的提示词或默认值
       const MAX_TOKENS = config.maxTokens || '1000'; // 使用保存的最大令牌数或默认值
       const RETRY_COUNT = config.retryCount || 3; // 使用保存的重试次数或默认值
 
@@ -224,13 +247,19 @@ chrome.commands.onCommand.addListener((command) => {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     if (tabs.length > 0) {
       const tabId = tabs[0].id;
+      const sendMessageCallback = (type) => {
+        if (chrome.runtime.lastError) {
+          console.log(`向标签页 ${tabId} 发送 '${type}' 消息失败: ${chrome.runtime.lastError.message}。可能是内容脚本尚未注入或页面不支持。`);
+        }
+      };
+
       // 根据命令类型发送不同的消息到内容脚本
       if (command === "refresh_summary") {
         console.log(`向标签页 ${tabId} 发送 'REFRESH_SUMMARY' 消息`);
-        chrome.tabs.sendMessage(tabId, { type: "REFRESH_SUMMARY" });
+        chrome.tabs.sendMessage(tabId, { type: "REFRESH_SUMMARY" }, () => sendMessageCallback("REFRESH_SUMMARY"));
       } else if (command === "close_dialog") {
         console.log(`向标签页 ${tabId} 发送 'CLOSE_DIALOG' 消息`);
-        chrome.tabs.sendMessage(tabId, { type: "CLOSE_DIALOG" });
+        chrome.tabs.sendMessage(tabId, { type: "CLOSE_DIALOG" }, () => sendMessageCallback("CLOSE_DIALOG"));
 
         // 中止该标签页的fetch请求
         if (fetchControllers[tabId]) {
@@ -240,20 +269,24 @@ chrome.commands.onCommand.addListener((command) => {
         }
       } else if (command === "toggle_visibility") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_VISIBILITY' 消息`);
-        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_VISIBILITY" });
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_VISIBILITY" }, () => sendMessageCallback("TOGGLE_VISIBILITY"));
       } else if (command === "toggle_follow_up") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_FOLLOW_UP' 消息`);
-        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_FOLLOW_UP" });
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_FOLLOW_UP" }, () => sendMessageCallback("TOGGLE_FOLLOW_UP"));
       } else if (command === "toggle_tts") {
         console.log(`向标签页 ${tabId} 发送 'TOGGLE_TTS' 消息`);
-        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_TTS" });
+        chrome.tabs.sendMessage(tabId, { type: "TOGGLE_TTS" }, () => sendMessageCallback("TOGGLE_TTS"));
       } else if (command === "boss_key") {
         isBossKeyActive = !isBossKeyActive; // 切换全局状态
         console.log(`老板键状态切换为: ${isBossKeyActive}`);
         // 向所有标签页广播消息
-        chrome.tabs.query({}, (tabs) => {
-          tabs.forEach(tab => {
-            chrome.tabs.sendMessage(tab.id, { type: "BOSS_KEY", isHidden: isBossKeyActive });
+        chrome.tabs.query({}, (allTabs) => {
+          allTabs.forEach(tab => {
+            chrome.tabs.sendMessage(tab.id, { type: "BOSS_KEY", isHidden: isBossKeyActive }, () => {
+              if (chrome.runtime.lastError) {
+                console.log(`向标签页 ${tab.id} 发送老板键消息失败: ${chrome.runtime.lastError.message}。`);
+              }
+            });
           });
         });
       }
@@ -298,9 +331,17 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
     if (!items.ttsBackgroundPlay && speakingTabId !== null && speakingTabId !== activeInfo.tabId) {
       console.log(`Tab switched from ${speakingTabId} to ${activeInfo.tabId}. Stopping TTS.`);
       // Tell the offscreen document to stop playing
-      chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+      chrome.runtime.sendMessage({ type: 'STOP_TTS' }, () => {
+        if (chrome.runtime.lastError) {
+          console.log(`向 offscreen 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+        }
+      });
       // Tell the original content script to clear its queues
-      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" });
+      chrome.tabs.sendMessage(speakingTabId, { type: "STOP_TTS" }, () => {
+        if (chrome.runtime.lastError) {
+          console.log(`向标签页 ${speakingTabId} 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+        }
+      });
       speakingTabId = null; // Reset state
     }
   });
@@ -310,7 +351,11 @@ chrome.tabs.onActivated.addListener((activeInfo) => {
 chrome.tabs.onRemoved.addListener((tabId, removeInfo) => {
     if (speakingTabId !== null && speakingTabId === tabId) {
         console.log(`Tab ${tabId} was closed. Stopping TTS.`);
-        chrome.runtime.sendMessage({ type: 'STOP_TTS' });
+        chrome.runtime.sendMessage({ type: 'STOP_TTS' }, () => {
+          if (chrome.runtime.lastError) {
+            console.log(`向 offscreen 发送 STOP_TTS 消息失败: ${chrome.runtime.lastError.message}`);
+          }
+        });
         speakingTabId = null;
     }
 });
