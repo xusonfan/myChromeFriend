@@ -705,7 +705,7 @@ function setupPromptManagement() {
     const selectedPrompt = prompts.find(p => p.id === selectedId);
     if (selectedPrompt && confirm(`确定要删除人设 "${selectedPrompt.name}" 吗？`)) {
       prompts = prompts.filter(p => p.id !== selectedId);
-      loadPrompts(prompts?.id); // 重新加载并选中第一个
+      loadPrompts(prompts[0]?.id); // 重新加载并选中第一个
     }
   });
 }
