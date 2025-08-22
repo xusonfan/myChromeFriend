@@ -685,16 +685,20 @@ function initializeLive2D() {
               console.log("使用缓存的总结内容。");
               conversationHistory = []; // 每次都重置历史
               // 通过克隆body并移除插件UI来获取纯净的页面文本
-              const bodyClone = document.body.cloneNode(true);
-              const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+              const documentClone = document.cloneNode(true);
+              const dialogClone = documentClone.querySelector('#dialog-wrapper');
               if (dialogClone) {
                 dialogClone.remove();
               }
-              const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+              const floatingButtonClone = documentClone.querySelector('#floating-ask-button');
               if (floatingButtonClone) {
                 floatingButtonClone.remove();
               }
-              const pageText = bodyClone.innerText;
+              const article = new Readability(documentClone, {
+                maxElemsToParse: 20000, // 设置最大解析元素数量以提高性能
+                disableJSONLD: true, // 禁用JSON-LD元数据解析
+              }).parse();
+              const pageText = article ? article.textContent : documentClone.body.innerText;
               const userMessage = { role: 'user', content: pageText };
               conversationHistory.push(userMessage);
 
@@ -722,16 +726,20 @@ function initializeLive2D() {
       // 使用一个小的延迟来确保动态加载的页面内容也能被捕获
       setTimeout(() => {
         // 通过克隆body并移除插件UI来获取纯净的页面文本
-        const bodyClone = document.body.cloneNode(true);
-        const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+        const documentClone = document.cloneNode(true);
+        const dialogClone = documentClone.querySelector('#dialog-wrapper');
         if (dialogClone) {
           dialogClone.remove();
         }
-        const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+        const floatingButtonClone = documentClone.querySelector('#floating-ask-button');
         if (floatingButtonClone) {
           floatingButtonClone.remove();
         }
-        const pageText = bodyClone.innerText;
+        const article = new Readability(documentClone, {
+          maxElemsToParse: 20000, // 设置最大解析元素数量以提高性能
+          disableJSONLD: true, // 禁用JSON-LD元数据解析
+        }).parse();
+        const pageText = article ? article.textContent : documentClone.body.innerText;
         const userMessage = { role: 'user', content: pageText };
         conversationHistory.push(userMessage);
 
@@ -829,16 +837,20 @@ function initializeLive2D() {
           setTimeout(updateGradientVisibility, 100);
 
           // 通过克隆body并移除插件UI来获取纯净的页面上下文
-          const bodyClone = document.body.cloneNode(true);
-          const dialogClone = bodyClone.querySelector('#dialog-wrapper');
+          const documentClone = document.cloneNode(true);
+          const dialogClone = documentClone.querySelector('#dialog-wrapper');
           if (dialogClone) {
             dialogClone.remove();
           }
-          const floatingButtonClone = bodyClone.querySelector('#floating-ask-button');
+          const floatingButtonClone = documentClone.querySelector('#floating-ask-button');
           if (floatingButtonClone) {
             floatingButtonClone.remove();
           }
-          const pageContext = bodyClone.innerText;
+          const article = new Readability(documentClone, {
+            maxElemsToParse: 20000, // 设置最大解析元素数量以提高性能
+            disableJSONLD: true, // 禁用JSON-LD元数据解析
+          }).parse();
+          const pageContext = article ? article.textContent : documentClone.body.innerText;
           const combinedText = askPromptTemplate
             .replace('{selection}', lastSelectedText)
             .replace('{context}', pageContext);
