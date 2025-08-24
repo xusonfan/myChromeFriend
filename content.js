@@ -788,6 +788,7 @@ function initializeLive2D() {
         padding: '5px 10px',
         background: 'white',
         color: '#333', // 设置字体颜色为深灰色
+        fontSize: '14px', // 设置固定字体大小以确保在不同网页中大小一致
         border: '1px solid #ccc',
         borderRadius: '5px',
         cursor: 'pointer',
