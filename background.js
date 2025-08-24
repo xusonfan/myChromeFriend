@@ -110,7 +110,19 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       const MODEL_NAME = config.modelName || 'gpt-4';
 
       // 根据 selectedPromptId 查找当前使用的提示词
-      const selectedPrompt = config.prompts.find(p => p.id === config.selectedPromptId);
+      // 如果是用户追问(isFollowUp为true)，则使用专门的追问提示词
+      let selectedPrompt;
+      if (request.isFollowUp) {
+        // 使用从设置中加载的追问专用提示词
+        selectedPrompt = {
+          id: "follow_up",
+          name: "追问专用",
+          value: config.followUpPrompt || "你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。"
+        };
+      } else {
+        // 页面总结使用用户选择的提示词
+        selectedPrompt = config.prompts.find(p => p.id === config.selectedPromptId);
+      }
 
       if (!selectedPrompt) {
         console.log("未找到选定的提示词，请在设置页面重新选择。");

@@ -210,6 +210,8 @@ async function saveOptions() {
   const ttsVolume = document.getElementById('tts-volume').value;
   const ttsBackgroundPlay = document.getElementById('tts-background-play').checked;
   const autoPlayTTS = document.getElementById('auto-play-tts').checked;
+  // 新增：获取追问提示词
+  const followUpPrompt = document.getElementById('follow-up-prompt').value;
 
   const defaultPrompts = await loadDefaultPrompts();
   // 先获取当前保存的设置，用于比较是否有变化
@@ -242,7 +244,9 @@ async function saveOptions() {
     ttsPitch: 0,
     ttsVolume: 100,
     ttsBackgroundPlay: false,
-    autoPlayTTS: true
+    autoPlayTTS: true,
+    // 新增：默认追问提示词
+    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。'
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -274,7 +278,9 @@ async function saveOptions() {
       ttsPitch: parseInt(ttsPitch, 10),
       ttsVolume: parseInt(ttsVolume, 10),
       ttsBackgroundPlay: ttsBackgroundPlay,
-      autoPlayTTS: autoPlayTTS
+      autoPlayTTS: autoPlayTTS,
+      // 新增：保存追问提示词
+      followUpPrompt: followUpPrompt
     };
 
     const hasChanges =
@@ -372,7 +378,9 @@ async function restoreOptions() {
     ttsPitch: 0,
     ttsVolume: 100,
     ttsBackgroundPlay: false,
-    autoPlayTTS: true
+    autoPlayTTS: true,
+    // 新增：默认追问提示词
+    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。'
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -409,10 +417,11 @@ async function restoreOptions() {
     document.getElementById('tts-volume-value').textContent = `${items.ttsVolume}%`;
     document.getElementById('tts-background-play').checked = items.ttsBackgroundPlay;
     document.getElementById('auto-play-tts').checked = items.autoPlayTTS;
+    // 新增：加载追问提示词
+    document.getElementById('follow-up-prompt').value = items.followUpPrompt;
 
 
     // 初始化UI状态
-    updateAskPromptUI();
     updateCacheDurationUI();
     updateTTSOptionsUI();
     fetchTTSVoices(items.ttsVoice);
@@ -448,17 +457,7 @@ async function restoreOptions() {
 
 // 根据启用状态，更新提示词输入框的UI
 function updateAskPromptUI() {
-  const enableFloatingButton = document.getElementById('enable-floating-button').checked;
-  const askPromptGroup = document.getElementById('ask-prompt-group');
-  const askPromptTextarea = document.getElementById('ask-prompt');
-
-  if (enableFloatingButton) {
-    askPromptGroup.style.opacity = '1';
-    askPromptTextarea.disabled = false;
-  } else {
-    askPromptGroup.style.opacity = '0.5';
-    askPromptTextarea.disabled = true;
-  }
+  // 不再隐藏划词提问提示词
 }
 
 // 根据启用状态，更新缓存时长输入框的UI
@@ -720,7 +719,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 确保在restoreOptions完成后再添加事件监听器
   setTimeout(() => {
-    document.getElementById('enable-floating-button').addEventListener('change', updateAskPromptUI);
     document.getElementById('enable-cache').addEventListener('change', updateCacheDurationUI);
     document.getElementById('enable-tts').addEventListener('change', updateTTSOptionsUI);
   }, 100);

@@ -328,8 +328,8 @@ function initializeLive2D() {
       conversationHistory.push({ role: 'user', content: question });
 
       dialogBox.firstChild.innerHTML = '正在思考中...';
-      // 发送包含历史记录的请求
-      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
+      // 发送包含历史记录的请求，添加isFollowUp标识
+      chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory, isFollowUp: true }, (response) => {
         if (response && response.summary) {
           streamText(dialogBox, response.summary, 15, (fullText) => {
             // 将AI的完整回答添加到历史记录
@@ -859,7 +859,7 @@ function initializeLive2D() {
           const userMessage = { role: 'user', content: combinedText };
           conversationHistory.push(userMessage);
 
-          chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory }, (response) => {
+          chrome.runtime.sendMessage({ type: 'GET_SUMMARY', history: conversationHistory, isFollowUp: true }, (response) => {
             if (response && response.summary) {
               streamText(dialogBox, response.summary, 15, (fullText) => {
                 conversationHistory.push({ role: 'assistant', content: fullText });
