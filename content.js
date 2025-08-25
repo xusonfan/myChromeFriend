@@ -109,6 +109,14 @@ function initializeLive2D() {
   let streamTimer = null; // 用于控制流式输出的定时器
   let currentStreamText = ''; // 存储当前流式文本
   let streamTextCallback = null; // 存储流式输出完成后的回调函数
+  let dialogAtMouseEnabled = false;
+  let isSelectionQueryDialogOpen = false; // 新增状态，追踪是否为划词提问对话框
+  let lastMousePosition = { x: 0, y: 0 };
+
+  // 使用 mousedown 事件在捕获阶段更新鼠标相对于视口的位置
+  document.addEventListener('mousedown', (e) => {
+    lastMousePosition = { x: e.clientX, y: e.clientY };
+  }, true);
 
   // 创建一个包裹对话框和按钮的容器
   const dialogWrapper = document.createElement('div');
@@ -184,6 +192,7 @@ function initializeLive2D() {
   closeButton.addEventListener('click', (e) => {
     e.stopPropagation(); // 防止事件冒泡
     dialogWrapper.style.display = 'none'; // 控制 wrapper 的显示
+    isSelectionQueryDialogOpen = false; // 关闭时重置状态
     // 关闭对话框时，也隐藏追问输入框
     if (askInput) {
       askInput.style.display = 'none';
@@ -412,14 +421,30 @@ function initializeLive2D() {
   dialogWrapper.appendChild(buttonContainer);
   document.body.appendChild(dialogWrapper);
 
+  // 新增：点击对话框外部时关闭对话框
+  document.addEventListener('mousedown', (e) => {
+    // 检查对话框是否可见，是否为划词提问对话框，以及点击事件是否发生在对话框之外
+    if (isSelectionQueryDialogOpen && dialogWrapper.style.display === 'block' && !dialogWrapper.contains(e.target)) {
+      dialogWrapper.style.display = 'none';
+      isSelectionQueryDialogOpen = false; // 关闭时重置状态
+      stopTTS(); // 关闭时停止TTS
+      // 同时隐藏追问输入框
+      if (askInput) {
+        askInput.style.display = 'none';
+      }
+    }
+  });
+
   // 从存储中获取设置并应用样式
   chrome.storage.sync.get({
     dialogOpacity: 0.6,
     dialogFontSize: 14,
     overallScale: 100,
     dialogSelectable: false,
-    enableFollowUp: true
+    enableFollowUp: true,
+    dialogAtMouse: false
   }, (items) => {
+    dialogAtMouseEnabled = items.dialogAtMouse; // 只保存设置，不在此时定位
     if (!items.enableFollowUp) {
       askButton.style.display = 'none';
     }
@@ -683,6 +708,13 @@ function initializeLive2D() {
       }
       
       const contentElement = dialogBox.firstChild;
+      isSelectionQueryDialogOpen = false; // 自动/手动总结时，禁用点击外部关闭
+      // 恢复固定的左下角位置
+      const scale = (live2dWidget.dataset.overallScale || 100) / 100;
+      const bottomPosition = 180 * scale;
+      dialogWrapper.style.left = '0px';
+      dialogWrapper.style.top = 'auto';
+      dialogWrapper.style.bottom = `${bottomPosition}px`;
       dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
       
       const CACHE_KEY = 'myChromeFriendSummaryCache';
@@ -849,6 +881,20 @@ function initializeLive2D() {
           stopTTS(); // 划词提问时停止TTS
           const contentElement = dialogBox.firstChild;
           contentElement.innerHTML = '正在思考中...';
+          isSelectionQueryDialogOpen = true; // 划词提问时，启用点击外部关闭
+          if (dialogAtMouseEnabled) {
+            // 将对话框的左上角定位到鼠标位置，使其出现在鼠标右下角
+            dialogWrapper.style.left = `${lastMousePosition.x}px`;
+            dialogWrapper.style.top = `${lastMousePosition.y}px`;
+            dialogWrapper.style.bottom = 'auto';
+          } else {
+           // 恢复固定的左下角位置
+           const scale = (live2dWidget.dataset.overallScale || 100) / 100;
+           const bottomPosition = 180 * scale;
+           dialogWrapper.style.left = '0px';
+           dialogWrapper.style.top = 'auto';
+           dialogWrapper.style.bottom = `${bottomPosition}px`;
+          }
           dialogWrapper.style.display = 'block'; // 控制 wrapper 的显示
           conversationHistory = []; // 开始新的划词提问时，清空历史记录
           

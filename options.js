@@ -212,6 +212,7 @@ async function saveOptions() {
   const autoPlayTTS = document.getElementById('auto-play-tts').checked;
   // 新增：获取追问提示词
   const followUpPrompt = document.getElementById('follow-up-prompt').value;
+  const dialogAtMouse = document.getElementById('dialog-at-mouse').checked;
 
   const defaultPrompts = await loadDefaultPrompts();
   // 先获取当前保存的设置，用于比较是否有变化
@@ -246,7 +247,8 @@ async function saveOptions() {
     ttsBackgroundPlay: false,
     autoPlayTTS: true,
     // 新增：默认追问提示词
-    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。'
+    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。',
+    dialogAtMouse: false
   }, (oldSettings) => {
     // 检查设置是否有变化
     const newSettings = {
@@ -280,7 +282,8 @@ async function saveOptions() {
       ttsBackgroundPlay: ttsBackgroundPlay,
       autoPlayTTS: autoPlayTTS,
       // 新增：保存追问提示词
-      followUpPrompt: followUpPrompt
+      followUpPrompt: followUpPrompt,
+      dialogAtMouse: dialogAtMouse
     };
 
     const hasChanges =
@@ -313,7 +316,8 @@ async function saveOptions() {
       oldSettings.ttsPitch !== newSettings.ttsPitch ||
       oldSettings.ttsVolume !== newSettings.ttsVolume ||
       oldSettings.ttsBackgroundPlay !== newSettings.ttsBackgroundPlay ||
-      oldSettings.autoPlayTTS !== newSettings.autoPlayTTS;
+      oldSettings.autoPlayTTS !== newSettings.autoPlayTTS ||
+      oldSettings.dialogAtMouse !== newSettings.dialogAtMouse;
 
     chrome.storage.sync.set(newSettings, () => {
       const saveButtonText = document.getElementById('save-button-text');
@@ -380,7 +384,8 @@ async function restoreOptions() {
     ttsBackgroundPlay: false,
     autoPlayTTS: true,
     // 新增：默认追问提示词
-    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。'
+    followUpPrompt: '你是一个可爱的动漫少女AI助手，正在与用户进行对话。请以轻松活泼的语调，用中文回答用户的问题。你的回答应该简洁明了，同时保持友好和乐于助人的态度。',
+    dialogAtMouse: false
   }, (items) => {
     document.getElementById('api-endpoint').value = items.apiEndpoint;
     document.getElementById('api-key').value = items.apiKey;
@@ -419,6 +424,7 @@ async function restoreOptions() {
     document.getElementById('auto-play-tts').checked = items.autoPlayTTS;
     // 新增：加载追问提示词
     document.getElementById('follow-up-prompt').value = items.followUpPrompt;
+    document.getElementById('dialog-at-mouse').checked = items.dialogAtMouse;
 
 
     // 初始化UI状态

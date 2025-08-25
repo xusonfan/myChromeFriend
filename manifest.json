@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "我的上网伙伴",
-  "version": "1.6.5",
+  "version": "1.7.0",
   "description": "一个可爱的动漫少女，陪伴你的网上冲浪。",
   "permissions": [
   "activeTab",
