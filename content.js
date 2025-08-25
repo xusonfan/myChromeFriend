@@ -104,6 +104,11 @@ function initializeLive2D() {
   let isSpeaking = false;
   let isFetching = false;
   let currentAudio = null;
+  
+  // 用于流式输出的变量
+  let streamTimer = null; // 用于控制流式输出的定时器
+  let currentStreamText = ''; // 存储当前流式文本
+  let streamTextCallback = null; // 存储流式输出完成后的回调函数
 
   // 创建一个包裹对话框和按钮的容器
   const dialogWrapper = document.createElement('div');
@@ -598,9 +603,13 @@ function initializeLive2D() {
     isFetching = false;
   }
 
-  let streamTimer = null; // 用于控制流式输出的定时器
-
-  // 流式显示函数（集成TTS）
+  /**
+   * 流式显示函数（集成TTS）
+   * @param {HTMLElement} element 要在其中显示文本的元素。
+   * @param {string} text 要显示的文本。
+   * @param {(number | {timeInterval: number})} [speed=15] 打字速度（毫秒）或包含 timeInterval 的对象。
+   * @param {(fullText: string) => void} [callback] 流式输出完成后的回调函数。
+   */
   function streamText(element, text, speed = 15, callback) {
     stopTTS(); // 开始新的流式输出前，停止之前的朗读
     if (streamTimer) clearTimeout(streamTimer);
@@ -608,16 +617,16 @@ function initializeLive2D() {
     const contentElement = element.firstChild;
     contentElement.innerHTML = '';
     let index = 0;
-    let currentText = '';
+    currentStreamText = '';
     let ttsBuffer = '';
 
     function typeWriter() {
       if (index < text.length) {
-        currentText += text.charAt(index);
+        currentStreamText += text.charAt(index);
         ttsBuffer += text.charAt(index);
         index++;
 
-        contentElement.innerHTML = parseMarkdown(currentText);
+        contentElement.innerHTML = parseMarkdown(currentStreamText);
         updateGradientVisibility();
 
         // 检查是否形成完整段落用于TTS (以换行符为界)
@@ -635,7 +644,15 @@ function initializeLive2D() {
           ttsBuffer = paragraphs[paragraphs.length - 1];
         }
 
-        streamTimer = setTimeout(typeWriter, speed);
+        // 如果speed是数字，则使用固定速度；如果是对象且包含timeInterval，则使用动态速度
+        let delay = 15; // 默认速度
+        if (typeof speed === 'number') {
+          delay = speed;
+        } else if (typeof speed === 'object' && speed.timeInterval !== undefined) {
+          delay = Math.max(1, speed.timeInterval); // 确保至少1ms的延迟
+        }
+
+        streamTimer = setTimeout(typeWriter, delay);
       } else {
         // 处理剩余的文本
         // 检查是否启用了TTS和自动播放
@@ -756,7 +773,8 @@ function initializeLive2D() {
             }
 
             // 使用流式显示，并在结束后更新历史记录
-            streamText(dialogBox, response.summary, 15, (fullText) => {
+            // 传递一个对象，包含timeInterval属性，初始为15ms
+            streamText(dialogBox, response.summary, { timeInterval: 15 }, (fullText) => {
               conversationHistory.push({ role: 'assistant', content: fullText });
               // 流式输出完成后再次检查渐变状态
               setTimeout(updateGradientVisibility, 100);
@@ -911,6 +929,18 @@ function initializeLive2D() {
     if (request.type === 'TTS_PLAYBACK_FINISHED') {
         isSpeaking = false;
         playNextAudio(); // 播放完成，尝试播放下一个
+    } else if (request.type === 'STREAM_CHUNK') {
+        // 处理流式响应数据块
+        if (request.isEnd) {
+            // 流结束，执行回调
+            if (streamTextCallback) {
+                streamTextCallback(currentStreamText);
+                streamTextCallback = null;
+            }
+        } else {
+            // 流数据块，更新显示
+            streamText(dialogBox, request.chunk, { timeInterval: request.timeInterval });
+        }
     } else if (request.type === "STOP_TTS") {
         stopTTS();
     } else if (request.type === "REFRESH_SUMMARY") {

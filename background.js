@@ -199,7 +199,67 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             if (!response.ok) {
               throw new Error(`HTTP 错误! 状态码: ${response.status}`);
             }
-            return await response.json(); // 成功则返回结果
+            
+            // 检查是否支持流式响应
+            if (!response.body) {
+              // 如果不支持流式响应，则回退到原来的处理方式
+              console.log("API不支持流式响应，使用普通JSON解析。");
+              return await response.json();
+            }
+            
+            // 处理流式响应
+            console.log("开始处理流式响应...");
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let isFirstChunk = true;
+            let lastChunkTime = Date.now();
+            let accumulatedData = ''; // 用于累积流式数据
+            
+            while (true) {
+              const { done, value } = await reader.read();
+              
+              if (done) {
+                console.log("流式响应处理完成。");
+                // 流结束，发送结束信号
+                chrome.tabs.sendMessage(tabId, { 
+                  type: 'STREAM_CHUNK', 
+                  chunk: '', 
+                  isEnd: true 
+                });
+                // 解析累积的数据并返回
+                try {
+                  const parsedData = JSON.parse(accumulatedData);
+                  console.log("流式响应数据解析成功:", parsedData);
+                  return parsedData;
+                } catch (e) {
+                  console.error("流式响应数据解析失败:", e);
+                  return {};
+                }
+              }
+              
+              // 计算时间间隔
+              const currentTime = Date.now();
+              const timeInterval = isFirstChunk ? 0 : currentTime - lastChunkTime;
+              lastChunkTime = currentTime;
+              isFirstChunk = false;
+              
+              // 解码数据块
+              const chunk = decoder.decode(value, { stream: true });
+              buffer += chunk;
+              accumulatedData += chunk;
+              
+              // 发送数据块和时间间隔到content script
+              chrome.tabs.sendMessage(tabId, { 
+                type: 'STREAM_CHUNK', 
+                chunk: buffer, 
+                timeInterval: timeInterval,
+                isEnd: false 
+              });
+              
+              // 清空buffer
+              buffer = '';
+            }
           } catch (error) {
             console.log(`第 ${i + 1} 次请求失败:`, error.message);
             if (i < retries) {
