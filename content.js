@@ -126,6 +126,7 @@ function initializeLive2D() {
   dialogWrapper.style.bottom = '180px';
   dialogWrapper.style.left = '0px';
   dialogWrapper.style.display = 'none'; // 默认隐藏
+  dialogWrapper.style.transition = 'top 0.3s ease'; // 为位置调整添加平滑过渡
 
   // 创建一个div作为对话框
   const dialogBox = document.createElement('div');
@@ -929,6 +930,15 @@ function initializeLive2D() {
                 conversationHistory.push({ role: 'assistant', content: fullText });
                 // 流式输出完成后再次检查渐变状态
                 setTimeout(updateGradientVisibility, 100);
+
+                // 新增：检查并调整对话框位置，确保其在视口内
+                const rect = dialogWrapper.getBoundingClientRect();
+                const viewportHeight = window.innerHeight;
+                if (rect.bottom > viewportHeight) {
+                  const overflow = rect.bottom - viewportHeight;
+                  const newTop = rect.top - overflow - 10; // 向上移动并留出10px边距
+                  dialogWrapper.style.top = `${newTop}px`;
+                }
               });
             } else {
               streamText(dialogBox, '未能获取响应。');
